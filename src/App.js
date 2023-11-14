@@ -1,7 +1,9 @@
+import TweetsPage from './pages/tweets/TweetsPage';
+
 function App() {
   return (
     <div className="App">
-      <h1>Keepcoders! Don't forget to learn React</h1>
+      <TweetsPage />
     </div>
   );
 }
