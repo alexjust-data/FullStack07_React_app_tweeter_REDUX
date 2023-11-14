@@ -1,3 +1,7 @@
+import clsx from 'clsx';
+// import './TweetsPage.css';
+import styles from './TweetsPage.module.css';
+
 const tweets = [
   {
     content:
@@ -15,10 +19,16 @@ const tweets = [
   },
 ];
 
-function TweetsPage() {
+function TweetsPage({ dark }) {
+  //   const className = clsx('tweetsPage', { dark, light: !dark });
+  const className = clsx(styles.tweetsPage, {
+    [styles.dark]: dark,
+    [styles.light]: !dark,
+  });
+
   return (
-    <div>
-      <ul>
+    <div className={className}>
+      <ul style={{ listStyle: 'none', border: '1px solid blue', padding: 24 }}>
         {tweets.map(tweet => (
           <li key={tweet.id}>
             <span>{tweet.content}</span>
