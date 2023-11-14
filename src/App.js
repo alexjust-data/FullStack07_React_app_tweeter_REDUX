@@ -1,17 +1,15 @@
-import TweetsPage from './pages/tweets/TweetsPage';
-import Button from './components/Button';
-
-import client from './api/client';
 import { useState } from 'react';
+import TweetsPage from './pages/tweets/TweetsPage';
+import LoginPage from './pages/auth/LoginPage';
 
 function App() {
-  const [show, setShow] = useState(true);
+  const [isLogged, setIsLogged] = useState(false);
+
+  const handleLogin = () => setIsLogged(true);
+
   return (
     <div className="App">
-      {show && <TweetsPage />}
-      <Button $variant="primary" onClick={() => setShow(v => !v)}>
-        Click me!
-      </Button>
+      {isLogged ? <TweetsPage /> : <LoginPage onLogin={handleLogin} />}
     </div>
   );
 }

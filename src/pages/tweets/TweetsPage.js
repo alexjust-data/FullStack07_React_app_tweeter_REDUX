@@ -4,8 +4,6 @@ import styles from './TweetsPage.module.css';
 import { getLatestTweets } from './service';
 import { useEffect, useState } from 'react';
 
-const count = 1;
-
 function TweetsPage({ dark }) {
   const [tweets, setTweets] = useState([]);
   //   const className = clsx('tweetsPage', { dark, light: !dark });
