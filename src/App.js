@@ -1,11 +1,15 @@
 import TweetsPage from './pages/tweets/TweetsPage';
 import Button from './components/Button';
 
+import client from './api/client';
+import { useState } from 'react';
+
 function App() {
+  const [show, setShow] = useState(true);
   return (
     <div className="App">
-      <TweetsPage />
-      <Button $variant="primary" onClick={() => console.log('clicked')}>
+      {show && <TweetsPage />}
+      <Button $variant="primary" onClick={() => setShow(v => !v)}>
         Click me!
       </Button>
     </div>
