@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import TweetsPage from './pages/tweets/TweetsPage';
 import LoginPage from './pages/auth/LoginPage';
+import NewTweetPage from './pages/tweets/NewTweetPage';
 
 function App({ initiallyLogged }) {
   const [isLogged, setIsLogged] = useState(initiallyLogged);
@@ -11,7 +12,10 @@ function App({ initiallyLogged }) {
   return (
     <div className="App">
       {isLogged ? (
-        <TweetsPage onLogout={handleLogout} />
+        <>
+          <TweetsPage onLogout={handleLogout} isLogged={isLogged} />
+          {/* <NewTweetPage /> */}
+        </>
       ) : (
         <LoginPage onLogin={handleLogin} />
       )}

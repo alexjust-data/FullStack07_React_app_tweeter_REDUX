@@ -5,14 +5,10 @@ import { getLatestTweets } from './service';
 import { useEffect, useState } from 'react';
 import Button from '../../components/Button';
 import { logout } from '../auth/service';
+import Layout from '../../components/layout/Layout';
 
-function TweetsPage({ dark, onLogout }) {
+function TweetsPage(props) {
   const [tweets, setTweets] = useState([]);
-  //   const className = clsx('tweetsPage', { dark, light: !dark });
-  const className = clsx(styles.tweetsPage, {
-    [styles.dark]: dark,
-    [styles.light]: !dark,
-  });
 
   useEffect(() => {
     // const fetchTweets = async () => {
@@ -27,26 +23,24 @@ function TweetsPage({ dark, onLogout }) {
     };
   }, []);
 
-  useEffect(() => {
-    document.title = dark ? 'dark' : 'light';
-  }, [dark]);
-
-  const handleLogout = async () => {
-    await logout();
-    onLogout();
-  };
-
   return (
-    <div className={className}>
-      <Button onClick={handleLogout}>Logout</Button>
-      <ul style={{ listStyle: 'none', border: '1px solid blue', padding: 24 }}>
-        {tweets.map(tweet => (
-          <li key={tweet.id}>
-            <span>{tweet.content}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Layout title="What's going on..." {...props}>
+      <div className="tweetsPage">
+        {tweets.length ? (
+          <ul
+            style={{ listStyle: 'none', border: '1px solid blue', padding: 24 }}
+          >
+            {tweets.map(tweet => (
+              <li key={tweet.id}>
+                <span>{tweet.content}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <Button $variant="primary">Be the first one...</Button>
+        )}
+      </div>
+    </Layout>
   );
 }
 
