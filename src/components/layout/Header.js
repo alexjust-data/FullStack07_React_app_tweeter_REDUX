@@ -2,8 +2,12 @@ import Button from '../Button';
 
 import logo, { ReactComponent as Icon } from '../../assets/twitter.svg';
 import { logout } from '../../pages/auth/service';
+import { useContext } from 'react';
+import { AuthContext } from '../../pages/auth/context';
 
-function Header({ isLogged, onLogout }) {
+function Header() {
+  const { isLogged, onLogout } = useContext(AuthContext);
+
   const handleLogoutClick = async () => {
     await logout();
     onLogout();

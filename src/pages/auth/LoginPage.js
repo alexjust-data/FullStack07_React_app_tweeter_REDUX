@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import Button from '../../components/Button';
 import { login } from './service';
+import { AuthContext } from './context';
 
-function LoginPage({ onLogin }) {
+function LoginPage() {
+  const { onLogin } = useContext(AuthContext);
   const [credentials, setCredentials] = useState({
     username: '',
     password: '',

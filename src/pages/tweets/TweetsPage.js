@@ -7,7 +7,7 @@ import Button from '../../components/Button';
 import { logout } from '../auth/service';
 import Layout from '../../components/layout/Layout';
 
-function TweetsPage(props) {
+function TweetsPage() {
   const [tweets, setTweets] = useState([]);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ function TweetsPage(props) {
   }, []);
 
   return (
-    <Layout title="What's going on..." {...props}>
+    <Layout title="What's going on...">
       <div className="tweetsPage">
         {tweets.length ? (
           <ul
