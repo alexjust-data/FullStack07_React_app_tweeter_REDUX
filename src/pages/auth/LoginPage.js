@@ -3,28 +3,27 @@ import Button from '../../components/Button';
 import { login } from './service';
 
 function LoginPage({ onLogin }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [credentials, setCredentials] = useState({
+    username: '',
+    password: '',
+  });
 
   const handleSubmit = async event => {
     event.preventDefault();
 
-    await login({
-      username,
-      password,
-    });
+    await login(credentials);
 
     onLogin();
   };
 
-  const handleUsernameChange = event => {
-    setUsername(event.target.value);
+  const handleChange = event => {
+    setCredentials(currentCredentials => ({
+      ...currentCredentials,
+      [event.target.name]: event.target.value,
+    }));
   };
 
-  const handlePasswordChange = event => {
-    setPassword(event.target.value);
-  };
-
+  const { username, password } = credentials;
   const disabled = !(username && password);
 
   return (
@@ -34,13 +33,13 @@ function LoginPage({ onLogin }) {
         <input
           type="text"
           name="username"
-          onChange={handleUsernameChange}
+          onChange={handleChange}
           value={username}
         />
         <input
           type="password"
           name="password"
-          onChange={handlePasswordChange}
+          onChange={handleChange}
           value={password}
         />
         <Button type="submit" $variant="primary" disabled={disabled}>
