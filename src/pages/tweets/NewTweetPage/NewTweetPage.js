@@ -1,4 +1,4 @@
-import Layout from '../../../components/layout/Layout';
+import Content from '../../../components/layout/Content';
 import Button from '../../../components/shared/Button';
 import Photo from '../../../components/shared/Photo';
 import Textarea from '../../../components/shared/Textarea';
@@ -7,7 +7,7 @@ import './NewTweetPage.css';
 
 function NewTweetPage() {
   return (
-    <Layout title="What are you thinking?">
+    <Content title="What are you thinking?">
       <div className="newTweetPage">
         <div className="left">
           <Photo />
@@ -31,7 +31,7 @@ function NewTweetPage() {
           </form>
         </div>
       </div>
-    </Layout>
+    </Content>
   );
 }
 

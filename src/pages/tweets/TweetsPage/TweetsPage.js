@@ -1,13 +1,13 @@
 import { getLatestTweets } from '../service';
 import { useEffect, useState } from 'react';
 import Button from '../../../components/shared/Button';
-import Layout from '../../../components/layout/Layout';
+import Content from '../../../components/layout/Content';
 import Tweet from '../components/Tweet';
 
 import './TweetsPage.css';
 
 const EmptyList = () => (
-  <div style={{ textAlign: 'center' }}>
+  <div className="tweetsPage-empty">
     <p>Be the first one!</p>
     <Button $variant="primary">Create tweet</Button>
   </div>
@@ -26,7 +26,7 @@ function TweetsPage() {
   }, []);
 
   return (
-    <Layout title="What's going on...">
+    <Content title="What's going on...">
       <div className="tweetsPage">
         {tweets.length ? (
           <ul>
@@ -40,7 +40,7 @@ function TweetsPage() {
           <EmptyList />
         )}
       </div>
-    </Layout>
+    </Content>
   );
 }
 
