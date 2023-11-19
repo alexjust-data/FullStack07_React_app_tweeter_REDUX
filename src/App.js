@@ -6,11 +6,11 @@ import { useAuth } from './pages/auth/context';
 function App() {
   const { isLogged } = useAuth();
   return (
-    <div className="App">
+    <div className="app">
       {isLogged ? (
         <>
           <TweetsPage />
-          {/* <NewTweetPage /> */}
+          <NewTweetPage />
         </>
       ) : (
         <LoginPage />

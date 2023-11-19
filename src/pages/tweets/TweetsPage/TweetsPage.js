@@ -1,8 +1,17 @@
-import { getLatestTweets } from './service';
+import { getLatestTweets } from '../service';
 import { useEffect, useState } from 'react';
-import Button from '../../components/shared/Button';
-import Layout from '../../components/layout/Layout';
+import Button from '../../../components/shared/Button';
+import Layout from '../../../components/layout/Layout';
+import Tweet from '../components/Tweet';
+
 import './TweetsPage.css';
+
+const EmptyList = () => (
+  <div style={{ textAlign: 'center' }}>
+    <p>Be the first one!</p>
+    <Button $variant="primary">Create tweet</Button>
+  </div>
+);
 
 function TweetsPage() {
   const [tweets, setTweets] = useState([]);
@@ -20,17 +29,15 @@ function TweetsPage() {
     <Layout title="What's going on...">
       <div className="tweetsPage">
         {tweets.length ? (
-          <ul
-            style={{ listStyle: 'none', border: '1px solid blue', padding: 24 }}
-          >
-            {tweets.map(tweet => (
-              <li key={tweet.id}>
-                <span>{tweet.content}</span>
+          <ul>
+            {tweets.map(({ id, ...tweet }) => (
+              <li key={id}>
+                <Tweet {...tweet} />
               </li>
             ))}
           </ul>
         ) : (
-          <Button $variant="primary">Be the first one...</Button>
+          <EmptyList />
         )}
       </div>
     </Layout>
