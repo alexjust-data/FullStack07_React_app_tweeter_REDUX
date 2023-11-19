@@ -1,15 +1,17 @@
 import Footer from './Footer';
 import Header from './Header';
 
+import './Layout.css';
+
 function Layout({ title, children }) {
   return (
-    <div>
-      <Header />
-      <main>
-        <h2>{title}</h2>
+    <div className="layout">
+      <Header className="layout-header bordered" />
+      <main className="layout-main bordered">
+        <h2 className="layout-title bordered">{title}</h2>
         {children}
       </main>
-      <Footer />
+      <Footer className="layout-footer bordered" />
     </div>
   );
 }

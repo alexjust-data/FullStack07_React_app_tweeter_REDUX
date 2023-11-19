@@ -1,5 +1,5 @@
-function Footer() {
-  return <footer>@2023 Keepcoding</footer>;
+function Footer({ className }) {
+  return <footer className={className}>@2023 Keepcoding</footer>;
 }
 
 export default Footer;

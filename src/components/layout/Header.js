@@ -1,10 +1,12 @@
-import Button from '../Button';
-
-import logo, { ReactComponent as Icon } from '../../assets/twitter.svg';
+import clsx from 'clsx';
+import Button from '../shared/Button';
+import { ReactComponent as Icon } from '../../assets/twitter.svg';
 import { logout } from '../../pages/auth/service';
 import { useAuth } from '../../pages/auth/context';
 
-function Header() {
+import './Header.css';
+
+function Header({ className }) {
   const { isLogged, onLogout } = useAuth();
 
   const handleLogoutClick = async () => {
@@ -13,16 +15,20 @@ function Header() {
   };
 
   return (
-    <header>
-      <div>
+    <header className={clsx('header', className)}>
+      <div className="header-logo">
         <Icon width={32} height={32} fill="red" />
-        {/* <img src={logo} alt="twitter-react" />{' '} */}
+        {/* <img src={logo} alt="twitter-react" /> */}
       </div>
-      <nav>
+      <nav className="header-nav">
         {isLogged ? (
-          <Button onClick={handleLogoutClick}>Logout</Button>
+          <Button onClick={handleLogoutClick} className="header-button">
+            Logout
+          </Button>
         ) : (
-          <Button $variant="primary">Login</Button>
+          <Button $variant="primary" className="header-button">
+            Login
+          </Button>
         )}
       </nav>
     </header>

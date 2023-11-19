@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import Button from '../../components/Button';
-import { login } from './service';
-import { useAuth } from './context';
+import Button from '../../../components/shared/Button';
+import FormField from '../../../components/shared/FormField';
+import { login } from '../service';
+import { useAuth } from '../context';
+
+import './LoginPage.css';
 
 function LoginPage() {
   const { onLogin } = useAuth();
@@ -26,25 +29,35 @@ function LoginPage() {
   };
 
   const { username, password } = credentials;
-  const disabled = !(username && password);
+  const buttonDisabled = !(username && password);
 
   return (
-    <div>
-      <h1>Log in to Twitter</h1>
+    <div className="loginPage">
+      <h1 className="loginPage-title">Log in to Twitter</h1>
       <form onSubmit={handleSubmit}>
-        <input
+        <FormField
           type="text"
           name="username"
+          label="phone, email or username"
+          className="loginForm-field"
           onChange={handleChange}
-          value={username}
+          value={credentials.username}
+          autofocus
         />
-        <input
+        <FormField
           type="password"
           name="password"
+          label="password"
+          className="loginForm-field"
           onChange={handleChange}
-          value={password}
+          value={credentials.password}
         />
-        <Button type="submit" $variant="primary" disabled={disabled}>
+        <Button
+          type="submit"
+          $variant="primary"
+          disabled={buttonDisabled}
+          className="loginForm-submit"
+        >
           Log in
         </Button>
       </form>

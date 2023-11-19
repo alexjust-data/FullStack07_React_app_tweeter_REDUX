@@ -1,11 +1,8 @@
-import clsx from 'clsx';
-// import './TweetsPage.css';
-import styles from './TweetsPage.module.css';
 import { getLatestTweets } from './service';
 import { useEffect, useState } from 'react';
-import Button from '../../components/Button';
-import { logout } from '../auth/service';
+import Button from '../../components/shared/Button';
 import Layout from '../../components/layout/Layout';
+import './TweetsPage.css';
 
 function TweetsPage() {
   const [tweets, setTweets] = useState([]);
@@ -17,10 +14,6 @@ function TweetsPage() {
     // };
     // fetchTweets();
     getLatestTweets().then(tweets => setTweets(tweets));
-
-    return function () {
-      console.log('Exit');
-    };
   }, []);
 
   return (
