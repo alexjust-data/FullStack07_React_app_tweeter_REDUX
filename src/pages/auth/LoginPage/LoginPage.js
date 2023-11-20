@@ -13,18 +13,25 @@ function LoginPage() {
     username: '',
     password: '',
   });
+  const [error, setError] = useState(null);
+  const [isFetching, setIsFeching] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   const handleSubmit = async event => {
     event.preventDefault();
 
-    await login(credentials);
-
-    onLogin();
-
-    const to = location?.state?.from?.pathname || '/';
-    navigate(to);
+    try {
+      setIsFeching(true);
+      await login(credentials);
+      setIsFeching(false);
+      onLogin();
+      const to = location?.state?.from?.pathname || '/';
+      navigate(to);
+    } catch (error) {
+      setIsFeching(false);
+      setError(error);
+    }
   };
 
   const handleChange = event => {
@@ -34,8 +41,12 @@ function LoginPage() {
     }));
   };
 
+  const resetError = () => {
+    setError(null);
+  };
+
   const { username, password } = credentials;
-  const buttonDisabled = !(username && password);
+  const buttonDisabled = !(username && password) || isFetching;
 
   return (
     <div className="loginPage">
@@ -63,8 +74,13 @@ function LoginPage() {
           disabled={buttonDisabled}
           className="loginForm-submit"
         >
-          Log in
+          {isFetching ? 'Connecting...' : 'Log in'}
         </Button>
+        {error && (
+          <div className="loginPage-error" onClick={resetError}>
+            {error.message}
+          </div>
+        )}
       </form>
     </div>
   );
