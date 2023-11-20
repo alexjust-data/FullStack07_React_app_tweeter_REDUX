@@ -5,6 +5,9 @@ import AuthButton from '../../pages/auth/components/AuthButton';
 
 import './Header.css';
 
+const navItemClassName = ({ isActive }) =>
+  clsx('header-nav-item', { active: isActive });
+
 function Header({ className }) {
   return (
     <header className={clsx('header', className)}>
@@ -18,13 +21,12 @@ function Header({ className }) {
         <NavLink
           to="/tweets/new"
           replace
-          // className={({ isActive }) => (isActive ? 'selected' : '')}
+          className={navItemClassName}
           // style={({ isActive }) => (isActive ? { color: 'red' } : null)}
         >
           New Tweet
         </NavLink>
-        |
-        <NavLink to="/tweets" end>
+        <NavLink to="/tweets" className={navItemClassName} end>
           See latest tweets
         </NavLink>
         <AuthButton className="header-button" />
