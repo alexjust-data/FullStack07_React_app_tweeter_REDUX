@@ -2,7 +2,7 @@ import clsx from 'clsx';
 
 import './FormField.css';
 
-const FormField = ({ className, autofocus, label, ...props }) => {
+const FormField = ({ className, label, ...props }) => {
   return (
     <div className={clsx('formField', className)}>
       <label className="formField-label">

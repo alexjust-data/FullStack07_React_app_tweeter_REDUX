@@ -42,7 +42,6 @@ function LoginPage() {
           className="loginForm-field"
           onChange={handleChange}
           value={credentials.username}
-          autofocus
         />
         <FormField
           type="password"
