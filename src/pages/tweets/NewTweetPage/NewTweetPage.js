@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import PropTypes from 'prop-types';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Content from '../../../components/layout/Content';
 import Button from '../../../components/shared/Button';
 import Photo from '../../../components/shared/Photo';
@@ -10,6 +11,34 @@ import { useNavigate } from 'react-router';
 
 const MIN_CHARACTERS = 5;
 const MAX_CHARACTERS = 140;
+
+const fibonacci = n => {
+  if (n <= 1) return n;
+  return fibonacci(n - 1) + fibonacci(n - 2);
+};
+
+const HeavyComponent = ({ value }) => {
+  const result = useMemo(() => fibonacci(value), [value]);
+  return (
+    <div>
+      <code>
+        Fibonacci({value}) = {result}
+      </code>
+    </div>
+  );
+};
+
+HeavyComponent.propTypes = {
+  value: PropTypes.number.isRequired,
+};
+
+// const MemoHeavyComponent = memo(HeavyComponent, (p, n) => {
+//   console.log('props', p, n);
+//   return p.value === n.value;
+// });
+
+// const MemoHeavyComponent = memo(HeavyComponent);
+const MemoHeavyComponent = HeavyComponent;
 
 function NewTweetPage() {
   const [content, setContent] = useState('');
@@ -58,6 +87,9 @@ function NewTweetPage() {
   const characters = `${content.length} / ${MAX_CHARACTERS}`;
   const buttonDisabled = content.length <= MIN_CHARACTERS || isFetching;
 
+  const callback = useCallback(() => {}, []);
+  const object = useMemo(() => ({}), []);
+
   return (
     <Content title="What are you thinking?">
       <div
@@ -94,6 +126,12 @@ function NewTweetPage() {
           </form>
         </div>
       </div>
+      <MemoHeavyComponent
+        value={37}
+        callback={callback}
+        object={object}
+        array={[]}
+      />
     </Content>
   );
 }
