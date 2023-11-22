@@ -2,13 +2,13 @@ import { useState } from 'react';
 import Button from '../../../components/shared/Button';
 import FormField from '../../../components/shared/FormField';
 import { login } from '../service';
-import { useAuth } from '../context';
+import { useAuthHandlers } from '../context';
 
 import './LoginPage.css';
 import { useLocation, useNavigate } from 'react-router';
 
 function LoginPage() {
-  const { onLogin } = useAuth();
+  const { onLogin } = useAuthHandlers();
   const [credentials, setCredentials] = useState({
     username: '',
     password: '',

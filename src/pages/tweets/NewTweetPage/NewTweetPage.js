@@ -86,7 +86,7 @@ function NewTweetPageForm({ isFetching, onSubmit }) {
   );
 }
 
-function NewTweetPage({ children }) {
+function NewTweetPage() {
   const [isFetching, setIsFetching] = useState(false);
   const navigate = useNavigate();
   const counterRef = useRef(0);
