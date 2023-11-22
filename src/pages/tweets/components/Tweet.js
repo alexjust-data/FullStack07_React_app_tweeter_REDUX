@@ -24,8 +24,8 @@ const Tweet = ({ content, updatedAt, user, likes }) => {
           {content}
           <div className="tweet-actions">
             <LikeButton
-              onLike={event => console.log(event)}
               likes={likes.length}
+              // onLike={event => console.log(event)}
             />
           </div>
         </div>

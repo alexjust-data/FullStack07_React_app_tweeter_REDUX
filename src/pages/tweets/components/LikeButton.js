@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
 import { ReactComponent as IconNotLiked } from '../../../assets/not-liked.svg';
@@ -24,6 +25,16 @@ const LikeButton = ({ likes, isLike, onLike }) => {
       <span className="likeButton-label">{likes}</span>
     </div>
   );
+};
+
+LikeButton.propTypes = {
+  likes: PropTypes.number.isRequired,
+  isLike: PropTypes.bool,
+  onLike: PropTypes.func.isRequired,
+};
+
+LikeButton.defaultProps = {
+  isLike: false,
 };
 
 export default LikeButton;
