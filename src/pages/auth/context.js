@@ -9,8 +9,8 @@ export const useIsLogged = () => {
 };
 
 export const useAuthHandlers = () => {
-  const auth = useContext(AuthContextHandlers);
-  return auth;
+  const authHandlers = useContext(AuthContextHandlers);
+  return authHandlers;
 };
 
 export const AuthContextProvider = ({ initiallyLogged, children }) => {
