@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Content from '../../../components/layout/Content';
 import Button from '../../../components/shared/Button';
 import Photo from '../../../components/shared/Photo';
@@ -15,6 +15,25 @@ function NewTweetPage() {
   const [content, setContent] = useState('');
   const [isFetching, setIsFetching] = useState(false);
   const navigate = useNavigate();
+  const counterRef = useRef(0);
+  const formRef = useRef(null);
+  const divRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  // { current: null }
+
+  useEffect(() => {
+    counterRef.current++;
+  });
+
+  useEffect(() => {
+    console.log(formRef);
+  }, []);
+
+  useEffect(() => {
+    console.log('textarea', textareaRef);
+    textareaRef.current.focus();
+  });
 
   const handleChange = event => {
     setContent(event.target.value);
@@ -41,18 +60,25 @@ function NewTweetPage() {
 
   return (
     <Content title="What are you thinking?">
-      <div className="newTweetPage">
+      <div
+        className="newTweetPage"
+        ref={element => {
+          console.log(element);
+          divRef.current = element;
+        }}
+      >
         <div className="left">
           <Photo />
         </div>
         <div className="right">
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit} ref={formRef}>
             <Textarea
               className="newTweetPage-textarea"
               placeholder="Hey! What's up!"
               value={content}
               onChange={handleChange}
               maxLength={MAX_CHARACTERS}
+              ref={textareaRef}
             />
             <div className="newTweetPage-footer">
               <span className="newTweetPage-characters">{characters}</span>
