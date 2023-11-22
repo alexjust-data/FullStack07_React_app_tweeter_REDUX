@@ -18,7 +18,7 @@ const fibonacci = n => {
 };
 
 const HeavyComponent = ({ value }) => {
-  const result = useMemo(() => fibonacci(value), [value]);
+  const result = fibonacci(value);
   return (
     <div>
       <code>
@@ -40,14 +40,58 @@ HeavyComponent.propTypes = {
 // const MemoHeavyComponent = memo(HeavyComponent);
 const MemoHeavyComponent = HeavyComponent;
 
-function NewTweetPage() {
+function NewTweetPageForm({ isFetching, onSubmit }) {
   const [content, setContent] = useState('');
+  const textareaRef = useRef(null);
+
+  const handleChange = event => {
+    setContent(event.target.value);
+  };
+
+  const handleSubmit = event => {
+    event.preventDefault();
+    onSubmit(content);
+  };
+
+  const characters = `${content.length} / ${MAX_CHARACTERS}`;
+  const buttonDisabled = content.length <= MIN_CHARACTERS || isFetching;
+
+  useEffect(() => {
+    console.log('textarea', textareaRef);
+    textareaRef.current.focus();
+  });
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <Textarea
+        className="newTweetPage-textarea"
+        placeholder="Hey! What's up!"
+        value={content}
+        onChange={handleChange}
+        maxLength={MAX_CHARACTERS}
+        ref={textareaRef}
+      />
+      <div className="newTweetPage-footer">
+        <span className="newTweetPage-characters">{characters}</span>
+        <Button
+          type="submit"
+          className="newTweetPage-submit"
+          $variant="primary"
+          disabled={buttonDisabled}
+        >
+          Let's go!
+        </Button>
+      </div>
+    </form>
+  );
+}
+
+function NewTweetPage({ children }) {
   const [isFetching, setIsFetching] = useState(false);
   const navigate = useNavigate();
   const counterRef = useRef(0);
   const formRef = useRef(null);
   const divRef = useRef(null);
-  const textareaRef = useRef(null);
 
   // { current: null }
 
@@ -59,17 +103,7 @@ function NewTweetPage() {
     console.log(formRef);
   }, []);
 
-  useEffect(() => {
-    console.log('textarea', textareaRef);
-    textareaRef.current.focus();
-  });
-
-  const handleChange = event => {
-    setContent(event.target.value);
-  };
-
-  const handleSubmit = async event => {
-    event.preventDefault();
+  const handleSubmit = async content => {
     try {
       setIsFetching(true);
       const tweet = await createTweet({ content });
@@ -79,13 +113,10 @@ function NewTweetPage() {
         navigate('/login');
       } else {
         setIsFetching(false);
-        // Show error
+        // Show errorMemoHeavyComponent
       }
     }
   };
-
-  const characters = `${content.length} / ${MAX_CHARACTERS}`;
-  const buttonDisabled = content.length <= MIN_CHARACTERS || isFetching;
 
   const callback = useCallback(() => {}, []);
   const object = useMemo(() => ({}), []);
@@ -103,30 +134,10 @@ function NewTweetPage() {
           <Photo />
         </div>
         <div className="right">
-          <form onSubmit={handleSubmit} ref={formRef}>
-            <Textarea
-              className="newTweetPage-textarea"
-              placeholder="Hey! What's up!"
-              value={content}
-              onChange={handleChange}
-              maxLength={MAX_CHARACTERS}
-              ref={textareaRef}
-            />
-            <div className="newTweetPage-footer">
-              <span className="newTweetPage-characters">{characters}</span>
-              <Button
-                type="submit"
-                className="newTweetPage-submit"
-                $variant="primary"
-                disabled={buttonDisabled}
-              >
-                Let's go!
-              </Button>
-            </div>
-          </form>
+          <NewTweetPageForm isFetching={isFetching} onSubmit={handleSubmit} />
         </div>
       </div>
-      <MemoHeavyComponent
+      <HeavyComponent
         value={37}
         callback={callback}
         object={object}
