@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import formatDistanceToNow from 'date-fns/formatDistanceToNow';
 
 import LikeButton from './LikeButton';
@@ -25,13 +26,23 @@ const Tweet = ({ content, updatedAt, user, likes }) => {
           <div className="tweet-actions">
             <LikeButton
               likes={likes.length}
-              // onLike={event => console.log(event)}
+              onLike={event => console.log(event)}
             />
           </div>
         </div>
       </div>
     </article>
   );
+};
+
+Tweet.propTypes = {
+  content: PropTypes.string.isRequired,
+  updatedAt: PropTypes.string.isRequired,
+  user: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    username: PropTypes.string.isRequired,
+  }),
+  likes: PropTypes.array.isRequired,
 };
 
 export default Tweet;
