@@ -23,7 +23,14 @@ function TweetsPage() {
     //   setTweets(tweets);
     // };
     // fetchTweets();
-    getLatestTweets().then(tweets => setTweets(tweets));
+    getLatestTweets().then(tweets => {
+      setTweets(() => {
+        // if (Math.random() > 0.5) {
+        //   throw new Error('Ooooops');
+        // }
+        return tweets;
+      });
+    });
   }, []);
 
   return (
