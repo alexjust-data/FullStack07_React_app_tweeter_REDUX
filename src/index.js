@@ -11,12 +11,12 @@ import ErrorBoundary from './components/errors/ErrorBoundary';
 import configureStore from './store';
 import Root from './Root';
 
-const store = configureStore();
-
 const accessToken = storage.get('auth');
 if (accessToken) {
   setAuthorizationHeader(accessToken);
 }
+
+const store = configureStore({ auth: !!accessToken });
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

@@ -1,7 +1,7 @@
 // import { createStore } from 'redux';
 
-function createStore(reducer) {
-  let state;
+function createStore(reducer, preloadedState) {
+  let state = preloadedState;
   let listeners = [];
 
   function getState() {
