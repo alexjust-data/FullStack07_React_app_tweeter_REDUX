@@ -30,13 +30,19 @@ function createStore(reducer) {
   };
 }
 
+const INCREMENT = 'increment';
+const DECREMENT = 'decrement';
+
+const increment = () => ({ type: INCREMENT });
+const decrement = payload => ({ type: DECREMENT, payload });
+
 const reducer = (state = 0, action) => {
   // implement state logic
   switch (action.type) {
-    case 'increment':
-      return state + 1;
-    case 'decrement':
-      return state - 1;
+    case INCREMENT:
+      return state + (action.payload || 1);
+    case DECREMENT:
+      return state - (action.payload || 1);
     default:
       return state;
   }
@@ -48,8 +54,8 @@ const callback = () => console.log('state', store.getState());
 const unsubscribe = store.subscribe(callback);
 callback();
 
-store.dispatch({ type: 'increment' });
+store.dispatch(increment());
 
 unsubscribe();
-store.dispatch({ type: 'decrement' });
+store.dispatch(decrement(5));
 console.log(store.getState());
