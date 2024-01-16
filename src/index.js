@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
 
 import './index.css';
 import App from './App';
@@ -10,6 +9,7 @@ import { AuthContextProvider } from './pages/auth/context';
 import ErrorBoundary from './components/errors/ErrorBoundary';
 
 import configureStore from './store';
+import Root from './Root';
 
 const store = configureStore();
 
@@ -22,11 +22,11 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <BrowserRouter>
+      <Root store={store}>
         <AuthContextProvider initiallyLogged={!!accessToken}>
           <App />
         </AuthContextProvider>
-      </BrowserRouter>
+      </Root>
     </ErrorBoundary>
   </React.StrictMode>,
 );
