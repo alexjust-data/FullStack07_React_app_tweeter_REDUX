@@ -527,6 +527,117 @@ export default function configureStore() {
 }
 ```
 
+> [!NOTE]
+> Seguimos ....
+
+Vamos a ver como integramos el `store` de `index.js` con redux en React
+
+```js
+import configureStore from './store';
+const store = configureStore();
+```
+
+Para eso tenemos la librería `react-redux`,  proporciona una forma de conectar componentes de React con un almacén Redux, facilitando la gestión del estado en aplicaciones React. Permite que los componentes accedan al estado de Redux y desencadenen acciones para actualizar ese estado.
+
+```sh
+npm i --save react-redux
+```
+Envielve la palicacion con este componente `<Provider />`   
+`connect()` es una funcion que te permite envolver componentes  
+
+Básicamente hará esto:
+
+![](public/img/1.png)
+
+**1er paso: importar el Provider y pasarle el store**
+
+Lo primero es utilizar el `<Provider />` envolviendo toda la aplicacion para que tengan acceso. Vamos al fichero princial de la app `index.js`
+
+```js
+import configureStore from './store';
+import { Provider } from 'react-redux'; // importo libreria
+const store = configureStore(); // <Provider store={store}>
+
+const accessToken = storage.get('auth');
+if (accessToken) {
+  setAuthorizationHeader(accessToken);
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <BrowserRouter>
+          <AuthContextProvider initiallyLogged={!!accessToken}>
+            <App />
+          </AuthContextProvider>
+        </BrowserRouter>
+      </Provider>
+    </ErrorBoundary>
+  </React.StrictMode>,
+);
+``` 
+
+Nosmalmente me creo un componete `Root` para ordenar todo y meterme estos Providers, a la larga me irá bien crearme un componenete que tenga tanto el `</Provider>` como el `</BrowserRouter>`
+
+Me creo `src/Root.js`
+
+```js
+import { Provider } from 'react-redux';
+import { BrowserRouter } from 'react-router-dom';
+
+export default function Root({ store, children }) {
+  return (
+    <Provider store={store}>
+      <BrowserRouter>{children}</BrowserRouter>
+    </Provider>
+  );
+}
+```
+
+Ahora tenemos en `index`
+
+```js
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+
+import './index.css';
+import App from './App';
+import storage from './utils/storage';
+import { setAuthorizationHeader } from './api/client';
+import { AuthContextProvider } from './pages/auth/context';
+import ErrorBoundary from './components/errors/ErrorBoundary';
+
+import configureStore from './store';
+import Root from './Root';
+
+const store = configureStore();
+
+const accessToken = storage.get('auth');
+if (accessToken) {
+  setAuthorizationHeader(accessToken);
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <ErrorBoundary>
+      <Root store={store}>
+        <AuthContextProvider initiallyLogged={!!accessToken}>
+          <App />
+        </AuthContextProvider>
+      </Root>
+    </ErrorBoundary>
+  </React.StrictMode>,
+);
+``` 
+ con esto básicamente lo que le estamos diciendo es que todo lo que esté dentro que básicamente es el `App` va a tener acceso a `store`.
+
+ 
+
+
+
 
 
 
