@@ -1,3 +1,14 @@
+
+> [!NOTE] 
+> SLIDES -> https://github.com/alexjust-data/FullStack07_React_app_tweeter_REDUX/blob/main/Redux.pdf
+> 
+> Teacher :   
+> David https://github.com/davidjj76  
+> Discord : https://discord.com/channels/1112689497642115172/1112689499605049377
+> 
+> https://github.com/KeepCodingWeb15/twitter-react/tree/redux  
+> https://github.com/KeepCodingWeb15  
+
 Partimos del repositorio de fundamentos React, de la rama creada `redux`
 
 ```sh
@@ -215,5 +226,248 @@ unsubscribe();
 store.dispatch({ type: 'decrement' });
 console.log(store.getState());
 ```
+
+## Conceptos básicos
+
+**Acciones**
+
+Objetos que representan una intención de cambiar el estado
+* Se definen con una propiedad obligatoria type que identifica el tipo de acción
+* Pueden contener otros datos que describen completamente la acción (payload)
+* Es buena práctica definir los distintos types como constantes, incluso ponerlos en un fichero aparte
+
+Actions creators
+
+Funciones que crean y devuelven acciones:
+* Acciones reusables
+* Fácilmente testeables
+* Mediante middleware, pueden devolver funciones, acceder al estado, ejecutar side-effects (asincronía)…
+
+https://github.com/redux-utilities/flux-standard-action
+
+**Estado**
+
+Lo que no vemos.
+
+El estado puede tener cualquier forma, es responsabilidad nuestra modelar el estado para que se ajuste a la aplicación. Puede ser:
+* Un dato primitivo: Number, String, Boolean
+* Un Array, Object, o cualquier estructura **serializable** (que puedes enviarlo como objeto string sin perdidas)
+
+**Reducers**
+
+Maneja la logica centrol del estado
+
+Especifican cómo cambia el estado en respuesta a las acciones enviadas al store
+
+* (previousState, action) => newState
+* Debe ser una función pura, por lo que no pueden, bajo ningún concepto:
+* Mutar sus argumentos
+* Ejecutar side-effects (API, BBDD, DOM…)
+* Llamar funciones no puras Date.now(), Math.random()
+* Fácilmente testeables y predecibles, ya que, a igual estado y acción, siempre generan el mismo estado
+
+
+**Store**
+
+* Objeto core de Redux, enlaza acciones con reducers
+* Guarda el estado de la aplicación
+* Permite el acceso al estado con store.getState()
+* Permite despachar acciones con store.dispatch(action)
+* Registra y mantiene subscripciones con store.subscribe()
+* Una vez definido el reducer, crear el store es tan sencillo
+
+**Flujo de datos**
+
+En Redux el flujo de datos es unidireccional
+1. Se despacha una acción: store.dispatch(action)
+2. El store llama al reducer pasándole el estado y la acción
+3. El reducer principal combina el resultado de los diferentes reducers, produciendo el nuevo estado
+4. Redux almacena el nuevo estado y llama a los subscriptores para que puedan consultar el valor
+
+
+> [!IMPORTANT]
+> Comenzamos a picar código
+
+Lo primero es pensar qué es lo que queremos almacenar en Redux.
+Estructurar el estado
+Qué acciones manejar en el estado.
+
+Renombro `store/index.js` -> `index-poc.js`.  
+Quito del `index.js` el `import './store'; `
+
+Ahora en `store` vamos a crear varios ficheros:
+* actions.js
+* types.js
+* reducers.js
+* index.js (donde almacenamos el store)
+
+
+Pensemos como queramos el estado: `store/reducers.js`
+
+```js
+// mi estado tendrá esta forma
+const defaultState = {
+  auth: false,
+  tweets: [],
+};
+
+// defino el reducer
+export default function reducer(state = defaultState, action) {
+  // ¿qué acciones tiene que tener nuestro estado?
+  // acciones que tengan que ver si el usuario está loguado o no
+  switch (action.type) {
+    case AUTH_LOGIN:            // si está logueado
+
+    case AUTH_LOGOUT:           // si está deslogueado
+
+    case TWEETS_LOADED:         // cargados los tweets
+
+    case TWEETS_CREATED:        // creados los tweets
+
+    default:                    // siempre el eestado por defecto
+      return state;
+  }
+}
+```
+
+Voy a `store/types.js` y exporto las acciones
+
+```js
+export const AUTH_LOGIN = 'auth/login';
+export const AUTH_LOGOUT = 'auth/logout';
+
+export const TWEETS_LOADED = 'tweets/loaded';
+export const TWEETS_CREATED = 'tweets/created';
+```
+
+```js
+import { AUTH_LOGIN, AUTH_LOGOUT, TWEETS_CREATED, TWEETS_LOADED,} from './types';
+
+const defaultState = {
+  auth: false,
+  tweets: [],
+};
+
+export default function reducer(state = defaultState, action) {
+  switch (action.type) {
+    case AUTH_LOGIN:
+      return {
+        ...state,    // devuelve nuevo objeto con forma que tenga "defaultState" en ese monento
+        auth: true,  // sobreescribo auth
+      };
+    case AUTH_LOGOUT:
+      return {
+        ...state,
+        auth: false,
+      };
+    case TWEETS_LOADED:
+      return {
+        ...state,
+        tweets: action.payload, // coje los tweets que te envie y los pones dentro del array
+      };
+
+    case TWEETS_CREATED:
+    default:
+      return state;
+  }
+}
+```
+
+Ahora hemos de ser capaces de despachar estos stores, es decir vamos a crear creadores de acciones.
+
+`actions.js` con `type` estas acciones quedan definidas.
+
+```js
+import { AUTH_LOGIN, AUTH_LOGOUT, TWEETS_LOADED } from './types';
+
+export const authLogin = () => ({
+  type: AUTH_LOGIN,
+});
+
+export const authLogout = () => ({
+  type: AUTH_LOGOUT,
+});
+
+export const tweetsLoaded = tweets => ({
+  type: TWEETS_LOADED,
+  payload: tweets,    // hemos dicho que le llgará un payload con los tweets que ha de almacenar
+});
+```
+
+Fíjate que los tres files tienes que cuadrar, es un contrato entre los tres. Es la base.
+
+Ahora creamos nuesto store `store/index.js`
+
+```js
+import { createStore } from 'redux';
+import reducer from './reducers';
+
+
+export default function configureStore() {
+  const store = createStore(reducer);
+  return store;
+}
+```
+
+En el indice de la aplicacion `index.js` --> `import configureStore from './store';`
+
+Con esto ya tenemos configurado el store, para verlo la mejor manera es is a las `devTools` para hacer esto hay varias maneras 
+
+https://github.com/reduxjs/redux-devtools
+
+Una vez instalada la extension, verás que te permite pasar más parámetros, para configurarlo puedes introducir esta linea https://github.com/reduxjs/redux-devtools/tree/main/extension#1-with-redux 
+
+Entonces vamos a `store/index.js` y se la ponemos
+
+```js
+import { createStore } from 'redux';
+import reducer from './reducers';
+
+
+export default function configureStore() {
+  const store = createStore(
+    reducer,
+    window.__REDUX_DEVTOOLS_EXTENSION__ &&
+      window.__REDUX_DEVTOOLS_EXTENSION__(),
+  );
+  return store;
+}
+```
+
+Pero hay ora forma de instalarlo 
+
+https://github.com/reduxjs/redux-devtools/tree/main/extension#13-use-redux-devtoolsextension-package-from-npm
+
+`npm install --save @redux-devtools/extension`
+
+```js
+import { createStore } from 'redux';
+
+import reducer from './reducers';
+import { devToolsEnhancer } from '@redux-devtools/extension';
+import * as actionCreators from './actions';
+
+export default function configureStore() {
+  const store = createStore(
+    reducer,
+    devToolsEnhancer({ actionCreators }),
+    // window.__REDUX_DEVTOOLS_EXTENSION__ &&
+    //   window.__REDUX_DEVTOOLS_EXTENSION__(),
+  );
+  return store;
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
