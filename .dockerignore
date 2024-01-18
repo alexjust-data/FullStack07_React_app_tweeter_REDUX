@@ -1,0 +1,5 @@
+
+# porque se va a generar dentro
+node_modules 
+build
+npm-debug.log
