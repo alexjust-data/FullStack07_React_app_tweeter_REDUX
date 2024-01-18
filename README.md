@@ -459,6 +459,74 @@ export default function configureStore() {
 ```
 
 
+Voy a intentar separar por partes en `Reducer` y conbinarlas luego. independientemente de la accion tenemos que tener claro que mi reducer ha de devolver un objeto que me devuelve un auth y un tweets.
+
+Lo vamos hacer en funciones más pequeñas.
+
+```js
+// import combineReducers from 'redux';
+
+import {
+  AUTH_LOGIN,
+  AUTH_LOGOUT,
+  TWEETS_CREATED,
+  TWEETS_LOADED,
+} from './types';
+
+const defaultState = {
+  auth: false,
+  tweets: [],
+};
+
+
+export function auth(state = defaultState.auth, action) {
+  switch (action.type) {
+    case AUTH_LOGIN:
+      return true;
+    case AUTH_LOGOUT:
+      return false;
+    default:
+      return state;
+  }
+}
+
+export function tweets(state = defaultState.tweets, action) {
+  switch (action.type) {
+    case TWEETS_LOADED:
+      return action.payload;
+
+    case TWEETS_CREATED:
+    default:
+      return state;
+  }
+}
+
+// export default combineReducers({ auth, tweets });
+
+```
+
+`combineReducers` es una funcion de `Redux` que me permite combinar 
+
+me voy a `index.js` e importo `reducers` (auth() y sweet()) y lo combino aquí dentro
+
+```js
+import { createStore, combineReducers } from 'redux';
+
+import * as reducers from './reducers';
+import { devToolsEnhancer } from '@redux-devtools/extension';
+import * as actionCreators from './actions';
+
+export default function configureStore() {
+  const store = createStore(
+    combineReducers(reducers),
+    devToolsEnhancer({ actionCreators }),
+    // window.__REDUX_DEVTOOLS_EXTENSION__ &&
+    //   window.__REDUX_DEVTOOLS_EXTENSION__(),
+  );
+  return store;
+}
+```
+
 
 
 
