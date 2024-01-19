@@ -1241,30 +1241,314 @@ Pero si pinchas al detalle se carga el detalla sin la necesidad de pedirlo de nu
 
 Si te fijas las recargas no funcionan todavía, esto es devido a que al app se reinicia de nuevo, pero si te vas al listado `http://localhost:3000/tweets` lo puedes hacer.
 
-Ya tienes
 
 > [!IMPORTANT]
 > Al final mi store de Redux es como una caché en el navegador de los datos que tengo de la app , que quiero ir comportiendo de la app
->
-> 
 
 
+Con esto acabamos con redux, en el sentido de que 
+* todas las acciones son Sincronas. No podemos de momento manejar ninguna sincronía.
 
 
+## Conceptos avanzados
+
+* Funciones asíncronas
+* Flujo asíncrono
+* Middleware
+* Uso con React Router
 
 
+**Funciones asíncronas**
+
+1. Hasta ahora todas las acciones son síncronas, ¿cómo emitimos acciones asíncronas?
+2. En peticiones AJAX a APIs identificamos varios momentos y en cada uno de ellos podemos emitir una acción síncrona
+ - El momento de iniciar la petición
+ - El momento en que la petición finaliza con éxito
+ - El momento en que la petición falla
+
+`store/reducers.js` voy a tener un estado que lo podemos llamar por ejemplo `ui` qu etendrá dos partes `isFetching` que de inicio es false y un `error` 
+
+```js
+import {
+  AUTH_LOGIN_REQUEST,
+  AUTH_LOGIN_SUCCESS,
+  AUTH_LOGOUT,
+  TWEETS_CREATED,
+  TWEETS_LOADED,
+  UI_RESET_ERROR,
+} from './types';
+
+const defaultState = {
+  auth: false,
+  tweets: [],
+  ui: {
+    isFetching: false,
+    error: null,
+  },
+};
+
+... 
+```
+
+Entonces cuando yo llame a Login 
+* lo primero será despachar a `la acción` que indica que empieza el login; y esa accion lo que hará es poner el `isFetching: true`
+* Luego llamaré al servicio, si el servicio va todo correcto, lo que haré será poner `isFetching: false,` y probablemente con el token responder a lo que tuviera que hacer. 
+* Y si hay algún error `isFetching: false,` e indicar el error.
+  
+Y almacenos ese estado en Redux. Y voy a poder conectar mis componentes a redux  para que reaccionen a esos estados.
+
+Cuando nosotros metemos una nueva parte en el estado ¿qué hacemos? crear nuestro `reducer` que maneje esa parte del estado `export function ui(state = defaultState.ui, action) {`
+
+```js
+import {
+  AUTH_LOGIN_REQUEST,
+  AUTH_LOGIN_SUCCESS,
+  AUTH_LOGOUT,
+  TWEETS_CREATED,
+  TWEETS_LOADED,
+  UI_RESET_ERROR,
+} from './types';
+
+const defaultState = {
+  auth: false,
+  tweets: [],
+  ui: {
+    isFetching: false,
+    error: null,
+  },
+};
+
+export function auth(state = defaultState.auth, action) {
+}
+
+export function tweets(state = defaultState.tweets, action) {
+}
+
+export function ui(state = defaultState.ui, action) {
+}
+```
+Necesitamos crearnos las acciones que pueden crearn este `ui`. Entonces me voy a 
+
+`types.js`
+
+```js
+// export const AUTH_LOGIN = 'auth/login';
+export const AUTH_LOGIN_REQUEST = 'auth/login/request';
+export const AUTH_LOGIN_SUCCESS = 'auth/login/success';
+export const AUTH_LOGIN_FAILURE = 'auth/login/failure';
+
+export const UI_RESET_ERROR = 'ui/reset_error';
+``` 
+
+```js
+export function ui(state = defaultState.ui, action) {
+  if (action.error) {
+    return { isFetching: false, error: action.payload };
+  }
+
+  switch (action.type) {
+    case AUTH_LOGIN_REQUEST:
+      return { isFetching: true, error: null };
+
+    case AUTH_LOGIN_SUCCESS:
+      return { isFetching: false, error: null };
+
+    case UI_RESET_ERROR:
+      return { ...state, error: null };
+
+    default:
+      return state;
+  }
+}
+```
+Fíjate que hemos de cambiar el `export function auth(state = defaultState.auth, action) {` que ahora le pertenece `AUTH_LOGIN_SUCCESS` yo pondré loguado a true si el servicio me responde corectamente nunca antes.
+
+```js
+import {
+  AUTH_LOGIN_REQUEST,
+  AUTH_LOGIN_SUCCESS,
+  AUTH_LOGOUT,
+  TWEETS_CREATED,
+  TWEETS_LOADED,
+  UI_RESET_ERROR,
+} from './types';
+
+const defaultState = {
+  auth: false,
+  tweets: [],
+  ui: {
+    isFetching: false,
+    error: null,
+  },
+};
 
 
+export function auth(state = defaultState.auth, action) {
+  switch (action.type) {
+    case AUTH_LOGIN_SUCCESS:
+      return true;
+    case AUTH_LOGOUT:
+      return false;
+    default:
+      return state;
+  }
+}
+
+export function tweets(state = defaultState.tweets, action) {
+  switch (action.type) {
+    case TWEETS_LOADED:
+      return action.payload;
+
+    case TWEETS_CREATED:
+    default:
+      return state;
+  }
+}
+
+export function ui(state = defaultState.ui, action) {
+  if (action.error) {
+    return { isFetching: false, error: action.payload };
+  }
+
+  switch (action.type) {
+    case AUTH_LOGIN_REQUEST:
+      return { isFetching: true, error: null };
+
+    case AUTH_LOGIN_SUCCESS:
+      return { isFetching: false, error: null };
+
+    case UI_RESET_ERROR:
+      return { ...state, error: null };
+
+    default:
+      return state;
+  }
+}
+```
+
+Ahora que tenemos los tipos necesitas las acciones 
+
+```js
+import {
+  AUTH_LOGIN_FAILURE,
+  AUTH_LOGIN_REQUEST,
+  AUTH_LOGIN_SUCCESS,
+  AUTH_LOGOUT,
+  TWEETS_LOADED,
+  UI_RESET_ERROR,
+} from './types';
+
+// creo esta
+export const authLoginRequest = () => ({
+  type: AUTH_LOGIN_REQUEST,
+});
+
+export const authLoginSuccess = () => ({
+  type: AUTH_LOGIN_SUCCESS,
+});
+
+// creo esta, que es un poco distinta
+export const authLoginFailure = error => ({
+  type: AUTH_LOGIN_FAILURE,
+  error: true,
+  payload: error,
+});
+
+export const authLogout = () => ({
+  type: AUTH_LOGOUT,
+});
+
+export const tweetsLoaded = tweets => ({
+  type: TWEETS_LOADED,
+  payload: tweets,
+});
+
+export const uiResetError = () => ({ type: UI_RESET_ERROR });
+```
+
+![](public/img/12.png)
+
+Ya puedes ver el `ui` 
+
+Vamos a llevar la logica al compomponente de `LoginPage.js`
+
+  `const [error, setError] = useState(null);`  
+  `const [isFetching, setIsFeching] = useState(false);`  
+
+Esto lo quitas porque lo puedes sacar de Redux. Simplemente te creas un `selector.js`
+
+```js
+export const getUi = state => state.ui;
+```
+
+Y le pasas este objeto 
+
+  `ui: {`  
+    `isFetching: false,`  
+    `error: null,`  
+  `},`  
+  
+```js
+function LoginPage() {
+  const dispatch = useDispatch();
+  const { isFetching, error } = useSelector(getUi);
+```
+
+Ahora lo que tenías localmente ya lo traes de fuera. Seguimos cambiando las acciones con dispatch
+Esto no hace falta
+
+  `const onLogin = () => {`  
+    `dispatch(authLoginSuccess());`  
+  `};`  
 
 
+```js
+
+import {
+  authLoginFailure,
+  authLoginRequest,
+  authLoginSuccess,
+  uiResetError
+} from '../../../store/actions';
+import { getUi } from '../../../store/selector';
 
 
+function LoginPage() {
+  const dispatch = useDispatch();
+  const { isFetching, error } = useSelector(getUi);
 
+  const [credentials, setCredentials] = useState({
+    username: '',
+    password: '',
+  });
+  const location = useLocation();
+  const navigate = useNavigate();
 
+  const handleSubmit = async event => {
+    event.preventDefault();
 
+    try {
+      //setIsFeching(true);
+      dispatch(authLoginRequest());
+      await login(credentials);
+      //setIsFeching(false);
+      //onLogin();
+      dispatch(authLoginSuccess()); // esto hace las dos cosas
+      const to = location?.state?.from?.pathname || '/';
+      navigate(to);
+    } catch (error) {
+      // setIsFeching(false);
+      // setError(error);
+      dispatch(authLoginFailure(error));
+    }
+  };
 
+  const resetError = () => {
+    dispatch(uiResetError());
+  };
 
+```
 
-
+1:26"
 
 

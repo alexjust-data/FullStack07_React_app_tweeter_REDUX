@@ -1,41 +1,47 @@
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Button from '../../../components/shared/Button';
 import FormField from '../../../components/shared/FormField';
 import { login } from '../service';
 
 import './LoginPage.css';
 import { useLocation, useNavigate } from 'react-router';
-import { authLogin } from '../../../store/actions';
+import {
+  authLoginFailure,
+  authLoginRequest,
+  authLoginSuccess,
+  uiResetError
+} from '../../../store/actions';
+import { getUi } from '../../../store/selector';
+
 
 function LoginPage() {
   const dispatch = useDispatch();
+  const { isFetching, error } = useSelector(getUi);
+
   const [credentials, setCredentials] = useState({
     username: '',
     password: '',
   });
-  const [error, setError] = useState(null);
-  const [isFetching, setIsFeching] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-
-  const onLogin = () => {
-    dispatch(authLogin());
-  };
 
   const handleSubmit = async event => {
     event.preventDefault();
 
     try {
-      setIsFeching(true);
+      //setIsFeching(true);
+      dispatch(authLoginRequest());
       await login(credentials);
-      setIsFeching(false);
-      onLogin();
+      //setIsFeching(false);
+      //onLogin();
+      dispatch(authLoginSuccess()); // esto hace las dos cosas
       const to = location?.state?.from?.pathname || '/';
       navigate(to);
     } catch (error) {
-      setIsFeching(false);
-      setError(error);
+      // setIsFeching(false);
+      // setError(error);
+      dispatch(authLoginFailure(error));
     }
   };
 
@@ -47,7 +53,7 @@ function LoginPage() {
   };
 
   const resetError = () => {
-    setError(null);
+    dispatch(uiResetError());
   };
 
   const { username, password } = credentials;
