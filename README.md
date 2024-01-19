@@ -848,7 +848,7 @@ Ahora si te vas a la app hacer un logout lo tendrás en la extension de redux
 
 --- 
 
-### **3er paso : 
+### **3er paso : selectores** 
 
 Cómo acceder a los componentes no para despacharlos si no para traernos la información que nos interese.
 
@@ -878,12 +878,13 @@ Entonces lo que haremos será conectarl el `logout` con connect sólamente para 
 ```
 
 Que cuando se ejecute hará el dispatch de la funcion que le digaoms, la forma de uso de connect es mediante 
+
 * 1ra llmada para cofigurar : `connect(mapDispatchToProps, mapDispatchToProps)`
 * 2da llamada para envolver el componente : `connect()(AuthButton);`
-
-* mapStateToProps: extrae datos del estado
-* mapDispatchToProps: crea funciones que despachan acciones
-* connect()(Component): pasa la función dispatch como prop
+---
+* `mapStateToProps`: extrae datos del estado
+* `mapDispatchToProps`: crea funciones que despachan acciones
+* `connect()(Component)`: pasa la función dispatch como prop
 
 Vamos a ver `mapDispatchToProps`  en el propio `AuthButton`
 
@@ -905,7 +906,19 @@ export default connect(null, mapDispatchToProps)(AuthButton);
 Para que conecte con `(AuthButton)` se la hemos le hemos de pasar el dato de `onLogout` como atributo.
 
 ```js
+import { Link } from 'react-router-dom';
+import { connect, useDispatch } from 'react-redux';
+import Button from '../../../components/shared/Button';
+import { useIsLogged } from '../context';
+import { logout } from '../service';
+import { authLogout } from '../../../store/actions';
+
+
+
 function AuthButton({ className, onLogout }) {
+  // const dispatch = useDispatch();
+  const isLogged = useIsLogged();
+
   // const onLogout = () => {
   //   dispatch(authLogout());
   // };
@@ -935,6 +948,309 @@ export default connect(null, mapDispatchToProps)(AuthButton);
 Ahora si te vas a la app y haces un logout verás como redux conecta y dispara el evento
 
 ![](public/img/7.png)
+
+---
+
+Ahora vamos a , mi estado que vivía enteriormente en este CustomHook `const isLogged = useIsLogged();` que lo tenemos en 
+
+`context.js`
+
+```js
+const AuthContext = createContext(false);
+const AuthContextHandlers = createContext(undefined);
+
+export const useIsLogged = () => {
+  const isLogged = useContext(AuthContext);
+  return isLogged;
+};
+
+export const useAuthHandlers = () => {
+  const authHandlers = useContext(AuthContextHandlers);
+  return authHandlers;
+};
+
+export const AuthContextProvider = ({ initiallyLogged, children }) => {
+  const [isLogged, setIsLogged] = useState(initiallyLogged);
+
+  const authHandlers = useMemo(
+    () => ({
+      onLogin: () => setIsLogged(true),
+      onLogout: () => setIsLogged(false),
+    }),
+    [],
+  );
+
+  return (
+    <AuthContextHandlers.Provider value={authHandlers}>
+      <AuthContext.Provider value={isLogged}>{children}</AuthContext.Provider>
+    </AuthContextHandlers.Provider>
+  );
+};
+```
+lee el contexto donde tenemos almacenado el estado que almacena el valor de `isLogged`. Pues ahora lo que haremos será cargarnos este estado de aquí y lo llevaremos a Redux.
+
+La manera de leerlo es aprovechar que tengo en `AuthButton.js` el `useIsLogged` y hacer una búsqueda por la app para ver donde modificar, y si lo buscas verás que lo tenemos en `AuthButton` que es el botón para hacer logout; y luego lo tenemos en `RequireAuth.js` que es el componente que protege nuestra ruta para en caso de que to quisiera acceder a un elemento que estaba protegida bajo autentificación enviarlo de vuelta al login. 
+
+¿cómo se lee la informacion en Redux?
+
+* `useSelector` : usada en un componente permite extraer datos de un store redux, usando un selector
+
+Si yo quiero connectar mi componente `RequireAuth` para que lea el estado `isLogged` desde Redux aquí 
+
+```js
+import { Navigate, useLocation } from 'react-router';
+import { useIsLogged } from '../context';
+
+function RequireAuth({ children }) {
+  const location = useLocation();
+  const isLogged = useIsLogged();
+
+  return isLogged ? (
+    children
+  ) : (
+    <Navigate to="/login" state={{ from: location }} />
+  );
+}
+
+export default RequireAuth;
+```
+
+lo que tenemos que hacer es esto:
+
+```js
+import { useSelector } from 'react-redux';
+import { Navigate, useLocation } from 'react-router';
+// import { useIsLogged } from '../context';
+
+function RequireAuth({ children }) {
+  const location = useLocation();
+  // const isLogged = useIsLogged();
+  const isLogged = useSelector(state => state.auth);
+
+  return isLogged ? (
+    children
+  ) : (
+    <Navigate to="/login" state={{ from: location }} />
+  );
+}
+
+export default RequireAuth;
+```
+Ya tenemos conectado. Y cuando lances una acción se renderizará de nuevo al cambiar el valor de este contexto.
+
+Ahora si te logueas con la app verás que es capaz de redicreccionar 
+
+![](public/img/8.png)
+
+---
+
+> [!NOTE]
+> Vamos a seguir con los selectores.  
+> Ahora mismo ya tenemos conectado todo lo que tiene que ver con el login que ya se maneja todo con Redux.
+
+Ahora si te fijas en context las funciones que hay ya no se usan, por lo tanto podemos eliminar el archivo. Te dará errores pero con los imports quehas de rectificar. En `index.js` quitamos el componente que ya no usamos `<AuthContextProvider />`
+
+```js
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+
+import './index.css';
+import App from './App';
+import storage from './utils/storage';
+import { setAuthorizationHeader } from './api/client';
+//import { AuthContextProvider } from './pages/auth/context';
+import ErrorBoundary from './components/errors/ErrorBoundary';
+
+import configureStore from './store';
+import Root from './Root';
+
+const accessToken = storage.get('auth');
+if (accessToken) {
+  setAuthorizationHeader(accessToken);
+}
+
+const store = configureStore({ auth: !!accessToken });
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <ErrorBoundary>
+      <Root store={store}>
+          <App />
+      </Root>
+    </ErrorBoundary>
+  </React.StrictMode>,
+);
+```
+La app sigue funcionando desde redus y en el browser. Pero podemos ver en Redux que la lista de tweets está vacía `tweets: []`
+
+**Vamos ahora a conectar el listado de tweets**
+
+Vamos al state de `TweetsPage.js` que teníamos este efecto
+
+```js
+function TweetsPage() {
+  const [tweets, setTweets] = useState([]);
+
+  useEffect(() => {
+    getLatestTweets().then(tweets => {
+      setTweets(() => {
+        return tweets;
+      });
+    });
+  }, []);
+```
+
+Y lo que haremos será almacenarlo en Redux. Cuando se resuelva la llamada al Api hacemos un dispatch quedanso así: 
+
+Además hemos de sacar los tweets de Redux ¿como los sacamos de redux? haciendo un `useSelector` 
+
+```js
+function TweetsPage() {
+  const tweets = useSelector();
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    getLatestTweets().then(tweets => {
+      dispatch(tweetsLoaded(tweets))
+    });
+  }, []);
+  ...
+```
+Y me voy a la logica e implemento un selector `store/selector.js`
+
+```js
+export const getTweets = state => state.tweets;
+```
+
+y se lo enchufo...
+
+```js
+function TweetsPage() {
+  const tweets = useSelector(getTweets);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    getLatestTweets().then(tweets => {
+      dispatch(tweetsLoaded(tweets))
+    });
+  }, [dispatch]);
+
+  .... 
+```
+Ya está cargando tweets
+
+![](public/img/9.png)
+
+
+Podríamos utilizar incluso en memoria el listado de tweets, antes los tenía solo en el componente, entonces antes se hacia dificil compartir los tweets entre componentes porque había que hacer peticiones y guardarlos en caché etc
+
+Vamos hacerlo pero no como si siempre fuera bien en una app si no para ver que Redux me permite compartir informacion entre componentes que incluso pueden estar en distints rutas.
+
+1. vamos al detalle que está en el componente `TweetPage.js`
+
+```js
+function TweetPage() {
+  const params = useParams();
+  const navigate = useNavigate();
+  const [tweet, setTweet] = useState(null);
+
+  useEffect(() => {
+    getTweet(params.tweetId)
+      .then(tweet => setTweet(tweet))
+      .catch(error => {
+        if (error.status === 404) {
+          navigate('/404');
+        }
+      });
+  }, [navigate, params.tweetId]);
+```
+
+Aquí tenemos una petición que se trae el tweet y lo pone en el stado ... vamos a cambiarlo para que lo saque directamente de Redux.
+
+```js
+import { useParams } from 'react-router';
+import Content from '../../../components/layout/Content';
+import { useSelector } from 'react-redux';
+
+function TweetPage() {
+  const params = useParams();
+
+  const tweet = useSelector(); // fíjate que falta pasarle los id de cada anuncnios
+
+  return (
+    <Content title="Tweet detail">
+      <div>
+        Tweet detail {params.tweetId} goes here...
+        {tweet && (
+          <div>
+            <code>{JSON.stringify(tweet)}</code>
+          </div>
+        )}
+      </div>
+    </Content>
+  );
+}
+
+export default TweetPage;
+```
+
+Necesito el id de cada twwet entonces en selector le paso la funcion para conseguir esto. El `tweetId` lo que hace es devolver la función que recibe el estado, y esta función que recibe el estado si que se la puedo pasar al `useSelector()`.
+
+```js
+// le pasare la funcion : getTweet(params.tweetId)
+export const getTweet = tweetId => state =>
+  getTweets(state).find(tweet => tweet.id === Number(tweetId));
+
+```
+
+```js
+import { useParams } from 'react-router';
+import Content from '../../../components/layout/Content';
+import { useSelector } from 'react-redux';
+
+function TweetPage() {
+  const params = useParams();
+
+  const tweet = useSelector(getTweet(params.tweetId)); // <---- getTweet(params.tweetId)
+
+  return (
+    <Content title="Tweet detail">
+      <div>
+        Tweet detail {params.tweetId} goes here...
+        {tweet && (
+          <div>
+            <code>{JSON.stringify(tweet)}</code>
+          </div>
+        )}
+      </div>
+    </Content>
+  );
+}
+
+export default TweetPage;
+```
+
+Ahora si te vas al listado de teewts verás como se carga la peticion 200 
+
+![](public/img/10.png)
+
+Pero si pinchas al detalle se carga el detalla sin la necesidad de pedirlo de nuevo 
+
+![](public/img/11.png)
+
+Si te fijas las recargas no funcionan todavía, esto es devido a que al app se reinicia de nuevo, pero si te vas al listado `http://localhost:3000/tweets` lo puedes hacer.
+
+Ya tienes
+
+> [!IMPORTANT]
+> Al final mi store de Redux es como una caché en el navegador de los datos que tengo de la app , que quiero ir comportiendo de la app
+>
+> 
+
+
+
+
 
 
 

@@ -5,7 +5,7 @@ import './index.css';
 import App from './App';
 import storage from './utils/storage';
 import { setAuthorizationHeader } from './api/client';
-import { AuthContextProvider } from './pages/auth/context';
+//import { AuthContextProvider } from './pages/auth/context';
 import ErrorBoundary from './components/errors/ErrorBoundary';
 
 import configureStore from './store';
@@ -23,9 +23,7 @@ root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <Root store={store}>
-        <AuthContextProvider initiallyLogged={!!accessToken}>
           <App />
-        </AuthContextProvider>
       </Root>
     </ErrorBoundary>
   </React.StrictMode>,

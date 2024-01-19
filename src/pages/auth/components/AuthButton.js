@@ -1,14 +1,12 @@
-import { Link } from 'react-router-dom';
 import { connect, useDispatch } from 'react-redux';
+import { Link } from 'react-router-dom';
 import Button from '../../../components/shared/Button';
-import { useIsLogged } from '../context';
 import { logout } from '../service';
 import { authLogout } from '../../../store/actions';
+import { getIsLogged } from '../../../store/selector';
 
-
-function AuthButton({ className, onLogout }) {
+function AuthButton({ className, onLogout, isLogged }) {
   // const dispatch = useDispatch();
-  const isLogged = useIsLogged();
 
   // const onLogout = () => {
   //   dispatch(authLogout());
@@ -29,8 +27,18 @@ function AuthButton({ className, onLogout }) {
   );
 }
 
+const mapStateToProps = (state, ownProps) => ({
+  isLogged: getIsLogged(state),
+});
+
+// const mapDispatchToProps = (dispatch, ownProps) => {
+//   return {
+//     onLogout: () => dispatch(authLogout()),
+//   };
+// };
+
 const mapDispatchToProps = {
   onLogout: authLogout,
 };
 
-export default connect(null, mapDispatchToProps)(AuthButton);
+export default connect(mapStateToProps, mapDispatchToProps)(AuthButton);

@@ -3,14 +3,13 @@ import { useDispatch } from 'react-redux';
 import Button from '../../../components/shared/Button';
 import FormField from '../../../components/shared/FormField';
 import { login } from '../service';
-import { authLogin } from '../../../store/actions';
 
 import './LoginPage.css';
 import { useLocation, useNavigate } from 'react-router';
+import { authLogin } from '../../../store/actions';
 
 function LoginPage() {
   const dispatch = useDispatch();
-  //const { onLogin } = useAuthHandlers();
   const [credentials, setCredentials] = useState({
     username: '',
     password: '',

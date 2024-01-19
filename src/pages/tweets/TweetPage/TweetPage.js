@@ -1,22 +1,12 @@
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import Content from '../../../components/layout/Content';
-import { useEffect, useState } from 'react';
-import { getTweet } from '../service';
+import { useSelector } from 'react-redux';
+import { getTweet } from '../../../store/selector';
 
 function TweetPage() {
   const params = useParams();
-  const navigate = useNavigate();
-  const [tweet, setTweet] = useState(null);
 
-  useEffect(() => {
-    getTweet(params.tweetId)
-      .then(tweet => setTweet(tweet))
-      .catch(error => {
-        if (error.status === 404) {
-          navigate('/404');
-        }
-      });
-  }, [navigate, params.tweetId]);
+  const tweet = useSelector(getTweet(params.tweetId));
 
   return (
     <Content title="Tweet detail">

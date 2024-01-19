@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getLatestTweets } from '../service';
 import Button from '../../../components/shared/Button';
@@ -6,7 +6,10 @@ import Content from '../../../components/layout/Content';
 import Tweet from '../components/Tweet';
 
 import './TweetsPage.css';
-
+import { useDispatch, useSelector } from 'react-redux';
+import { tweetsLoaded } from '../../../store/actions';
+import { getTweets } from '../../../store/selector';
+ 
 const EmptyList = () => (
   <div className="tweetsPage-empty">
     <p>Be the first one!</p>
@@ -15,23 +18,14 @@ const EmptyList = () => (
 );
 
 function TweetsPage() {
-  const [tweets, setTweets] = useState([]);
+  const tweets = useSelector(getTweets);
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    // const fetchTweets = async () => {
-    //   const tweets = await getLatestTweets();
-    //   setTweets(tweets);
-    // };
-    // fetchTweets();
     getLatestTweets().then(tweets => {
-      setTweets(() => {
-        // if (Math.random() > 0.5) {
-        //   throw new Error('Ooooops');
-        // }
-        return tweets;
-      });
+      dispatch(tweetsLoaded(tweets));
     });
-  }, []);
+  }, [dispatch]);
 
   return (
     <Content title="What's going on...">
