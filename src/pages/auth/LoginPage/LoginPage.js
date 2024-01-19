@@ -1,14 +1,16 @@
 import { useState } from 'react';
+import { useDispatch } from 'react-redux';
 import Button from '../../../components/shared/Button';
 import FormField from '../../../components/shared/FormField';
 import { login } from '../service';
-import { useAuthHandlers } from '../context';
+import { authLogin } from '../../../store/actions';
 
 import './LoginPage.css';
 import { useLocation, useNavigate } from 'react-router';
 
 function LoginPage() {
-  const { onLogin } = useAuthHandlers();
+  const dispatch = useDispatch();
+  //const { onLogin } = useAuthHandlers();
   const [credentials, setCredentials] = useState({
     username: '',
     password: '',
@@ -17,6 +19,10 @@ function LoginPage() {
   const [isFetching, setIsFeching] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+
+  const onLogin = () => {
+    dispatch(authLogin());
+  };
 
   const handleSubmit = async event => {
     event.preventDefault();

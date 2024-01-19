@@ -549,7 +549,8 @@ Básicamente hará esto:
 
 ![](public/img/1.png)
 
-**1er paso: importar el Provider y pasarle el store**
+---
+### **1er paso: importar el Provider y pasarle el store**
 
 Lo primero es utilizar el `<Provider />` envolviendo toda la aplicacion para que tengan acceso. Vamos al fichero princial de la app `index.js`
 
@@ -634,7 +635,308 @@ root.render(
 ``` 
  con esto básicamente lo que le estamos diciendo es que todo lo que esté dentro que básicamente es el `App` va a tener acceso a `store`.
 
- 
+---
+
+Acuérdate ahora que esto, el `accessToken` en el `index.js`...
+
+```js
+const accessToken = storage.get('auth');
+if (accessToken) {
+  setAuthorizationHeader(accessToken);
+}
+``` 
+
+lo utilizábamos para persistir el token en el logout storage para que si cerraba la pestaña dijera que tiene token e igualmente estaba autenticado, y entonces el `initiallyLogged` del `<AuthContextProvider initiallyLogged={!!accessToken}>` lo pongo en TRUE o FALSE en función de eso. Pero ahora realmente este TRUE o FALSE ya no va a vivir en este componente, ya no va a vivir en nuestro estado local, va a vivir en nuestro `store` de `const store = configureStore();`. POr lo tanto a `configureStore()` le vamos a pasar un valor que ons diga si inicalmente esoty logueado o no.
+
+```js
+const store = configureStore({ auth: !!accessToken });
+```
+
+Entonces recibimos este objeto de configuración en su function correspondiente en el `index` y lo pasamos en `createStore()` como segundo parámetro
+
+```js
+export default function configureStore(preloadedState) {
+  const store = createStore(
+    combineReducers(reducers), //1er parámetro el reducers
+    preloadedState,            //2do puede ir o no el preloadedState
+    devToolsEnhancer({ actionCreators }), // los mejoradores del store
+  );
+  return store;
+}
+```
+
+> [!NOTE]
+> Acuérdate que inicalmente cuando configuramos nuestro propio **CreateState** es lo mismo que si yo lo configuraba pasándole al state el preloaded , así `index-poc`
+```js
+function createStore(reducer, preloadedState) {
+  let state = preloadedState;
+  let listeners = [];
+
+  ...
+```
+---
+
+Entonces ya tengo la capacidad de leer de mi local storage y configurar el estado de inicio con lo que yo haya leído.
+
+```js
+const accessToken = storage.get('auth');
+if (accessToken) {
+  setAuthorizationHeader(accessToken);
+}
+
+const store = configureStore({ auth: !!accessToken });
+```
+
+Ahora si te vas al browser de la app verás que no tienes token, pero si te creas uno nuevo inventado
+
+![](public/img/2.png)
+
+verás que en la extension de Redux y recargas la aplicacino tienes `auth: true,`
+
+![](public/img/3.png)
+
+Es exactamente la misma folosofía de antes cuando iniciábamos el estado de login pero lo hacemos a traves de este parámetro `preloadedState`.
+
+---
+
+### **2do paso : Despachando acciones**
+
+**Despacharemos el login**
+
+Recordando lo secuencia del login lo que hacía era en `loginPage.js` hacia en `handleSubmit` un `submit` con las credenciales
+
+```js
+  const handleSubmit = async event => {
+    event.preventDefault();
+
+    try {
+      setIsFeching(true);
+      await login(credentials); // hace petición al servicio 
+      setIsFeching(false);      // cuando se resuelve 
+      onLogin();                // llamamos al onLogin()
+```
+
+Este `onLogin()` básicamente es el que venía de `constext.js` donde cambiaba el estado en `AuthContextProvider`
+
+```js
+export const AuthContextProvider = ({ initiallyLogged, children }) => {
+  const [isLogged, setIsLogged] = useState(initiallyLogged);
+
+  const authHandlers = useMemo(
+    () => ({
+      onLogin: () => setIsLogged(true), 
+      onLogout: () => setIsLogged(false),
+    }),
+    [],
+  );
+```
+
+Si yo en vez de llamar a `onLogin();` en `handleSubmit` llamo a un `dispach` de login lo que hago es hacer que cuando se cambie el login seré capaz de cambiar el estado con Redux y cuanod se produzca el logout seré de cambiarlo de nuevo.
+
+Vamos al lío...
+
+Para enganchar un componente necesito tener acceso al dispach dentro del componente para ello redux tinene un hoo `useDespatch()`
+
+`LoginPage.js` añado 
+
+```js
+import { useDispatch } from 'react-redux';
+import { authLogin } from '../../../store/actions';
+... 
+
+function LoginPage() {
+  const dispatch = useDispatch();
+  //const { onLogin } = useAuthHandlers(); // ya no lo necesito
+  ... 
+
+  const onLogin = () => {  // me creo esta funcion para sustituir la implementacion
+    dispatch(authLogin());
+  };
+```
+
+entonces este ` dispatch(authLogin());` va a generar la accion llamando a `store/action.js` en la linea 
+
+```js
+export const authLogin = () => ({
+  type: AUTH_LOGIN,
+});
+```
+
+esto genera la accion y se la paso a dispatch que me lo da useDispatch(); y `useDispatch();` básicamente lo que hace es conectarse en el contexto donde hemos puesto el store en `Root` en `<Provider store={store}>` lo que hace `Provider` es establecer un contexto y a través de `useDispatch();` se contecta a este contexto y coge el método dispatch.
+
+```js
+export default function Root({ store, children }) {
+  return (
+    <Provider store={store}>
+```
+
+Ya tenemos el método del login, en vez de cambiar el estado local, lo que hará será cambiar el estado de login. Ahora vete a la app y haz un login. Te va a disparar la acción.
+
+
+![](public/img/4.png)
+
+Además tienes tu token real
+
+![](public/img/5.png)
+
+
+No está navegando pero ya vemos al menos que se despacha. Vamos a por Logout
+
+Teníamos el `Button` en `page/auth/components/AuthButton.js` y lo que hacía era llamar a `useAuthHandlers()` para traérselo a `onLogout` a través del contexto
+
+```js
+function AuthButton({ className }) {
+  const isLogged = useIsLogged();
+  const { onLogout } = useAuthHandlers();
+
+  const handleLogoutClick = async () => {
+    await logout();
+    onLogout();
+  };
+  return isLogged ? (
+    <Button onClick={handleLogoutClick} className={className}>
+      Logout
+    </Button>
+  ) : (
+    <Button as={Link} to="/login" $variant="primary" className={className}>
+      Login
+    </Button>
+  );
+}
+```
+
+Pues esto lo vamos a cambiar por un `dispatch`
+
+```js
+import { Link } from 'react-router-dom';
+import Button from '../../../components/shared/Button';
+import { useIsLogged } from '../context';
+import { logout } from '../service';
+import { useDispatch } from 'react-redux';
+import { authLogout } from '../../../store/actions';
+
+
+function AuthButton({ className }) {
+  const dispatch = useDispatch();
+  const isLogged = useIsLogged();
+
+  const onLogout = () => {
+    dispatch(authLogout());
+  };
+
+  const handleLogoutClick = async () => {
+    await logout();
+    onLogout();
+  };
+  return isLogged ? (
+    <Button onClick={handleLogoutClick} className={className}>
+      Logout
+    </Button>
+  ) : (
+    <Button as={Link} to="/login" $variant="primary" className={className}>
+      Login
+    </Button>
+  );
+}
+
+export default AuthButton;
+```
+
+Ahora si te vas a la app hacer un logout lo tendrás en la extension de redux
+
+![](public/img/6.png)
+
+--- 
+
+### **3er paso : 
+
+Cómo acceder a los componentes no para despacharlos si no para traernos la información que nos interese.
+
+* `connect` : Es una función de orden superior que conecta componentes de React con el store de Redux. Permite acceder al estado y despachar acciones. Se usa principalmente en componentes de clase.. Conecta el componente con el store de Redux. Sirve tanto para traer informacion como apra despacher acciones.
+  
+* `useSelector` : Es un hook de React-Redux utilizado en componentes funcionales para seleccionar datos del store de Redux. Es más simple y directo comparado con connect y es la forma recomendada de acceder al estado en componentes funcionales.
+
+
+Vamos a poner un ejemplo de connect. Imagínate que no estás usando `useDispatch();` en el propio `AuthButton`
+
+```js
+function AuthButton({ className }) {
+  // const dispatch = useDispatch();
+  const isLogged = useIsLogged();
+
+  // const onLogout = () => {
+  //   dispatch(authLogout());
+  // };
+```
+
+Entonces lo que haremos será conectarl el `logout` con connect sólamente para poder inyectar una propiedad que será una función similar a esta:
+
+```js
+  // const onLogout = () => {
+  //   dispatch(authLogout());
+  // };
+```
+
+Que cuando se ejecute hará el dispatch de la funcion que le digaoms, la forma de uso de connect es mediante 
+* 1ra llmada para cofigurar : `connect(mapDispatchToProps, mapDispatchToProps)`
+* 2da llamada para envolver el componente : `connect()(AuthButton);`
+
+* mapStateToProps: extrae datos del estado
+* mapDispatchToProps: crea funciones que despachan acciones
+* connect()(Component): pasa la función dispatch como prop
+
+Vamos a ver `mapDispatchToProps`  en el propio `AuthButton`
+
+```js
+export default connect(null, mapDispatchToProps)(AuthButton);
+```
+
+Creamos la funcion 
+
+```js
+const mapDispatchToProps = {
+  onLogout: authLogout,
+};
+
+// se la pasamos 
+export default connect(null, mapDispatchToProps)(AuthButton);
+``` 
+
+Para que conecte con `(AuthButton)` se la hemos le hemos de pasar el dato de `onLogout` como atributo.
+
+```js
+function AuthButton({ className, onLogout }) {
+  // const onLogout = () => {
+  //   dispatch(authLogout());
+  // };
+
+  const handleLogoutClick = async () => {
+    await logout();
+    onLogout();
+  };
+  return isLogged ? (
+    <Button onClick={handleLogoutClick} className={className}>
+      Logout
+    </Button>
+  ) : (
+    <Button as={Link} to="/login" $variant="primary" className={className}>
+      Login
+    </Button>
+  );
+}
+
+const mapDispatchToProps = {
+  onLogout: authLogout,
+};
+
+export default connect(null, mapDispatchToProps)(AuthButton);
+```
+
+Ahora si te vas a la app y haces un logout verás como redux conecta y dispara el evento
+
+![](public/img/7.png)
+
+
 
 
 

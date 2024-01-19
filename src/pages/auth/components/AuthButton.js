@@ -1,11 +1,18 @@
 import { Link } from 'react-router-dom';
+import { connect, useDispatch } from 'react-redux';
 import Button from '../../../components/shared/Button';
-import { useAuthHandlers, useIsLogged } from '../context';
+import { useIsLogged } from '../context';
 import { logout } from '../service';
+import { authLogout } from '../../../store/actions';
 
-function AuthButton({ className }) {
+
+function AuthButton({ className, onLogout }) {
+  // const dispatch = useDispatch();
   const isLogged = useIsLogged();
-  const { onLogout } = useAuthHandlers();
+
+  // const onLogout = () => {
+  //   dispatch(authLogout());
+  // };
 
   const handleLogoutClick = async () => {
     await logout();
@@ -22,4 +29,8 @@ function AuthButton({ className }) {
   );
 }
 
-export default AuthButton;
+const mapDispatchToProps = {
+  onLogout: authLogout,
+};
+
+export default connect(null, mapDispatchToProps)(AuthButton);
