@@ -1233,11 +1233,17 @@ export default TweetPage;
 
 Ahora si te vas al listado de teewts verás como se carga la peticion 200 
 
+---
 ![](public/img/10.png)
+
+---
 
 Pero si pinchas al detalle se carga el detalla sin la necesidad de pedirlo de nuevo 
 
+---
 ![](public/img/11.png)
+
+---
 
 Si te fijas las recargas no funcionan todavía, esto es devido a que al app se reinicia de nuevo, pero si te vas al listado `http://localhost:3000/tweets` lo puedes hacer.
 
@@ -1475,8 +1481,10 @@ export const tweetsLoaded = tweets => ({
 
 export const uiResetError = () => ({ type: UI_RESET_ERROR });
 ```
-
+---
 ![](public/img/12.png)
+
+---
 
 Ya puedes ver el `ui` 
 
@@ -1561,7 +1569,10 @@ function LoginPage() {
 
 ```
 
+---
 ![](public/img/13.png)
+
+---
 
 Hemos metido el error en el strore de redux y el componenete como esta conectado ha esta parte de store lo teemos pindado. Y si clicas en el mensaje de error pondrás el error a nulo.
 
@@ -1751,9 +1762,109 @@ Con middleware -> flujo asíncrono
 * Cada middleware puede pasar acciones al siguientemiddleware
 * El último middleware envuelve al dispatch original de Redux, por lo que debe asegurarse que las acciones que le pase son acciones normales de Redux (objetos con type)
 
-
+---
 ![](public/img/14.png)
 
 ---
 
+**Middelware Loger**
+
 Vamos hacer que tengamos la psoibilidad de loguear cada accion y el resultado posterior. Podemos crearnos un Middleware para ello. 
+
+`store/ìndex.js` 
+
+```js
+// logger recibe el store que recibe una función "next" que esta recibe otra funcion "action"
+const logger = store => next => action => {
+};
+```
+
+Cuando llames a dispatch en realidad llamarás a esta rama. 
+
+```js
+const logger = store => next => action => {
+  console.group(action.type);  // Inicia grupo en consola, agrupa mens siguientes bajo título común.
+  console.info('dispatching', action, store.getState()); // info consola acción despachando y estado
+  const result = next(action); // // Llama al siguiente middleware
+  console.log('final state', store.getState()); // consola el estado final después acción procesada.
+  console.groupEnd(); // // Cierra el grupo iniciado anteriormente en la consola.
+  return result;
+};
+
+
+// Ahora esto hay que meterlo en el middleware. El orden del arrray importa y puede fallar, 
+const middleware = [thunk, logger];
+```
+Fíjate como nos llega la informacino
+
+---
+![](public/img/15.png)
+
+---
+
+**auth/login/request** aquí empieza el login request, al meterlo al final del array `const middleware = [thunk, logger];` por conslo ya solo pinta las acciones que tiene un request , las que sion funciones las está tratantp Thunk y las está ejecutanto. Y Al final pinta el estado final **auth/login/success**
+
+Es decir, con una función pequeña somos capaces de loggear cualquier dispatch de toda la aplicacón, no tengo que ir al componente a buscar el dispatch y hacer un console.log delante y un console.log detrás para saber que está ocurriendo... no, me creo un Middelware y ahí lo tengo.
+
+**Middelware noAction**
+
+Ejemplo chorra de lo que podemos hacer
+
+```js
+const noAction = () => next => action => {
+  // Verifica si el tipo de acción termina con '/no-throw'.
+  if (action.type.endsWith('/request)) {
+    // Si es así, no hace nada más y no pasa la acción al siguiente middleware o reducer.
+    // Esto efectivamente "traga" o ignora las acciones que terminan con '/no-throw'.
+    return;
+  }
+  // Si el tipo de acción no termina con '/no-throw', pasa la acción al siguiente
+  // middleware o reducer en la cadena de Redux.
+  return next(action);
+};
+
+
+const middleware = [thunk, logger, noAction];
+```
+---
+![](public/img/16.png)
+
+---
+
+Fíjate que ahora no ha lanzado la accion de request. Imagina que no quieres que se lancen algún tipo de accoin.
+
+**Middelware timestamp** 
+
+Paea llevar el control de cada hora que se lanza **cada acción**.
+
+```js
+const timestamp = () => next => action => {
+  return next({
+    ...action,
+    meta: { ...action.meta, timestamp: new Date() },
+  });
+};
+
+const middleware = [thunk, timestamp, logger, noAction];
+```
+
+Cada acción detrás del `timestap` se ejecutará el middelware. Con esto te aseguras que todas las acciones, todas, llevan la hora. 
+
+Fíjate qué lleva cada acción ahora.
+
+---
+![](public/img/17.png)
+
+---
+
+Y no te has de preocupar que cada una lleve un tiempo. En el artúculo tienes muchos ejemplos
+
+* https://redux.js.org/understanding/history-and-design/middleware#understanding-middleware 
+
+
+
+
+
+
+
+

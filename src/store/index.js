@@ -13,7 +13,30 @@ const thunk = store => next => action => {
   next(action);
 };
 
-const middleware = [thunk];
+const logger = store => next => action => {
+  console.group(action.type);
+  console.info('dispatching', action, store.getState());
+  const result = next(action);
+  console.log('final state', store.getState());
+  console.groupEnd();
+  return result;
+};
+
+const noAction = () => next => action => {
+  if (action.type.endsWith('/no-throw')) {
+    return;
+  }
+  return next(action);
+};
+
+const timestamp = () => next => action => {
+  return next({
+    ...action,
+    meta: { ...action.meta, timestamp: new Date() },
+  });
+};
+
+const middleware = [thunk, timestamp, logger, noAction];
 
 export default function configureStore(preloadedState) {
   const store = createStore(
@@ -25,3 +48,4 @@ export default function configureStore(preloadedState) {
   );
   return store;
 }
+
