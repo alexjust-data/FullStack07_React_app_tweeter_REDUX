@@ -2040,9 +2040,187 @@ El detalla de Tweet tiene que tener una acción similar, es decir, tengo una acc
 
 es un mecanismo para controlar cuando quiero caché y cuando no.
 
+--- 
+> [!NOTE] 
+> Date cuenta que podemos cambiar la forma del estado sin miedo porque lo controlamos todo en los selectores y podemos controlar las acciones hasta el más mínimo detalle (quiero volver a la zando la accion, o quiero descartarla, etc) Dejando al componente adnóstico, el componente tira la acción sin saber más.
+--- 
+
+Nuestro fichero de `actions.js` tiene unas dependencias externas de servicio
+
+```js
+import { login } from '../pages/auth/service';
+import { getLatestTweets } from '../pages/tweets/service';
+```
+
+Redu nos deja desde con inyectamos el Thun hacer llgar a nuestras acciones un 3er parámetro para meter lo que nos de la gana `return async function (dispatch, getState, ... })`
+
+`actions.js`
+
+en este argumento nuevo ...
+
+```js
+export function authLogin(credentials) {
+  return async function (dispatch, getState, ... }) // ... aquí le puedo pasar todas mis acciones
+```
+¿porqué no inyectar aquí la llamada al api y asi nos quitamos la dependencias al service?
+
+ExtraArgument
+
+`ìndex.js`
+
+```js
+const thunk = store => next => action => {
+  if (typeof action === 'function') {
+    return action(store.dispatch, store.getState, ExtraArgument); // aquí le puedo pasar todas mis acciones
+  }
+  next(action);
+};
+```
+
+con este ExtraArgument voy a llegar a todas mis acciones `(dispatch, getState, { api: { auth } })`
+
+```js
+export function authLogin(credentials) {
+  return async function (dispatch, getState, { api: { auth } }) {
+    try {
+      dispatch(authLoginRequest());
+      await auth.login(credentials); // añado auth
+      dispatch(authLoginSuccess());
+    } catch (error) {
+      dispatch(authLoginFailure(error));
+      throw error;
+    }
+  };
+}
+```
+
+La idea es que desde fuera le inyecto esto `{ api: { auth } }`
+
+De la misma forma para cargar los tweets me va a inyectar `{ api: { tweets } }`
+
+```js
+export function loadTweets() {
+  return async function (dispatch, getState, { api: { tweets } }) {
+    if (areTweetsLoaded(getState())) {
+      return;
+    }
+
+    try {
+      dispatch(tweetsLoadedRequest());
+      const tweetsList = await tweets.getLatestTweets(); // añado tweets.
+      dispatch(tweetsLoadedSuccess(tweetsList));
+    } catch (error) {
+      dispatch(tweetsLoadedFailure(error));
+      throw error;
+    }
+  };
+}
+``` 
+
+Para inyectar todo esto 
+
+`ìndex.js`
+
+```js
+import * as tweets from '../pages/tweets/service';
+import * as auth from '../pages/auth/service';
 
 
+const thunk = extraArgument => store => next => action => {
+  if (typeof action === 'function') {
+    return action(store.dispatch, store.getState, extraArgument);
+  }
+  next(action);
+};
 
+
+// const middleware = [thunk, timestamp, logger, noAction];
+// DESPUES
+const middleware = [
+  withExtraArgument({ api: { auth, tweets } }),
+  timestamp,
+  logger,
+  noAction,
+];
+``` 
+
+Acabas de envovler otra funcion por fuera y ahí le pasas loque sea.
+
+
+**OJO**
+
+Pero ahora Thunk ha creado una funcion para inyectar codigo  
+`import { thunk, withExtraArgument } from 'redux-thunk';`
+
+```js
+import { createStore, combineReducers, applyMiddleware } from 'redux';
+import { thunk, withExtraArgument } from 'redux-thunk';
+import { composeWithDevTools } from '@redux-devtools/extension';
+
+import * as reducers from './reducers';
+import * as actionCreators from './actions';
+
+import * as tweets from '../pages/tweets/service';
+import * as auth from '../pages/auth/service';
+
+const composeEnhancers = composeWithDevTools({ actionCreators });
+
+// const thunk = extraArgument => store => next => action => {
+//   if (typeof action === 'function') {
+//     return action(store.dispatch, store.getState, extraArgument);
+//   }
+//   next(action);
+// };
+
+const logger = store => next => action => {
+  console.group(action.type);
+  console.info('dispatching', action, store.getState());
+  const result = next(action);
+  console.log('final state', store.getState());
+  console.groupEnd();
+  return result;
+};
+
+const noAction = () => next => action => {
+  if (action.type.endsWith('/no-throw')) {
+    return;
+  }
+  return next(action);
+};
+
+const timestamp = () => next => action => {
+  return next({
+    ...action,
+    meta: { ...action.meta, timestamp: new Date() },
+  });
+};
+
+const middleware = [
+  withExtraArgument({ api: { auth, tweets } }),
+  timestamp,
+  logger,
+  noAction,
+];
+
+export default function configureStore(preloadedState) {
+  const store = createStore(
+    combineReducers(reducers),
+    preloadedState,
+    composeEnhancers(applyMiddleware(...middleware)),
+    // window.__REDUX_DEVTOOLS_EXTENSION__ &&
+    //   window.__REDUX_DEVTOOLS_EXTENSION__(),
+  );
+  return store;
+}
+```
+
+TENEMOS las dos opciones
+
+
+**Inyectamos el navegate de Route**
+
+
+Así llevamos la accion con la respuesta
 
 
 

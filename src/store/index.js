@@ -1,17 +1,21 @@
 import { createStore, combineReducers, applyMiddleware } from 'redux';
-// import { thunk } from 'redux-thunk';
+import { thunk, withExtraArgument } from 'redux-thunk';
 import { composeWithDevTools } from '@redux-devtools/extension';
 
 import * as reducers from './reducers';
 import * as actionCreators from './actions';
 
+import * as tweets from '../pages/tweets/service';
+import * as auth from '../pages/auth/service';
+
 const composeEnhancers = composeWithDevTools({ actionCreators });
-const thunk = store => next => action => {
-  if (typeof action === 'function') {
-    return action(store.dispatch, store.getState);
-  }
-  next(action);
-};
+
+// const thunk = extraArgument => store => next => action => {
+//   if (typeof action === 'function') {
+//     return action(store.dispatch, store.getState, extraArgument);
+//   }
+//   next(action);
+// };
 
 const logger = store => next => action => {
   console.group(action.type);
@@ -36,7 +40,12 @@ const timestamp = () => next => action => {
   });
 };
 
-const middleware = [thunk, timestamp, logger, noAction];
+const middleware = [
+  withExtraArgument({ api: { auth, tweets } }),
+  timestamp,
+  logger,
+  noAction,
+];
 
 export default function configureStore(preloadedState) {
   const store = createStore(
@@ -48,4 +57,3 @@ export default function configureStore(preloadedState) {
   );
   return store;
 }
-

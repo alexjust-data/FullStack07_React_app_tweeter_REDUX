@@ -27,10 +27,10 @@ export const authLoginFailure = error => ({
 });
 
 export function authLogin(credentials) {
-  return async function (dispatch, getState) {
+  return async function (dispatch, getState, { api: { auth } }) {
     try {
       dispatch(authLoginRequest());
-      await login(credentials);
+      await auth.login(credentials);
       dispatch(authLoginSuccess());
     } catch (error) {
       dispatch(authLoginFailure(error));
@@ -59,15 +59,15 @@ export const tweetsLoadedFailure = error => ({
 });
 
 export function loadTweets() {
-  return async function (dispatch, getState) {
+  return async function (dispatch, getState, { api: { tweets } }) {
     if (areTweetsLoaded(getState())) {
       return;
     }
 
     try {
       dispatch(tweetsLoadedRequest());
-      const tweets = await getLatestTweets();
-      dispatch(tweetsLoadedSuccess(tweets));
+      const tweetsList = await tweets.getLatestTweets();
+      dispatch(tweetsLoadedSuccess(tweetsList));
     } catch (error) {
       dispatch(tweetsLoadedFailure(error));
       throw error;
