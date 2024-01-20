@@ -2,18 +2,14 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import Button from '../../../components/shared/Button';
 import FormField from '../../../components/shared/FormField';
-import { login } from '../service';
 
 import './LoginPage.css';
 import { useLocation, useNavigate } from 'react-router';
 import {
-  authLoginFailure,
-  authLoginRequest,
-  authLoginSuccess,
-  uiResetError
+  authLogin,
+  uiResetError,
 } from '../../../store/actions';
-import { getUi } from '../../../store/selector';
-
+import { getUi } from '../../../store/selectors';
 
 function LoginPage() {
   const dispatch = useDispatch();
@@ -30,18 +26,11 @@ function LoginPage() {
     event.preventDefault();
 
     try {
-      //setIsFeching(true);
-      dispatch(authLoginRequest());
-      await login(credentials);
-      //setIsFeching(false);
-      //onLogin();
-      dispatch(authLoginSuccess()); // esto hace las dos cosas
+      await dispatch(authLogin(credentials));
       const to = location?.state?.from?.pathname || '/';
       navigate(to);
     } catch (error) {
-      // setIsFeching(false);
-      // setError(error);
-      dispatch(authLoginFailure(error));
+      console.log(error);
     }
   };
 

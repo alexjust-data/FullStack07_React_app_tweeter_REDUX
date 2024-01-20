@@ -8,7 +8,7 @@ import Tweet from '../components/Tweet';
 import './TweetsPage.css';
 import { useDispatch, useSelector } from 'react-redux';
 import { tweetsLoaded } from '../../../store/actions';
-import { getTweets } from '../../../store/selector';
+import { getTweets } from '../../../store/selectors';
  
 const EmptyList = () => (
   <div className="tweetsPage-empty">

@@ -1291,6 +1291,7 @@ const defaultState = {
 ```
 
 Entonces cuando yo llame a Login 
+
 * lo primero será despachar a `la acción` que indica que empieza el login; y esa accion lo que hará es poner el `isFetching: true`
 * Luego llamaré al servicio, si el servicio va todo correcto, lo que haré será poner `isFetching: false,` y probablemente con el token responder a lo que tuviera que hacer. 
 * Y si hay algún error `isFetching: false,` e indicar el error.
@@ -1298,6 +1299,9 @@ Entonces cuando yo llame a Login
 Y almacenos ese estado en Redux. Y voy a poder conectar mis componentes a redux  para que reaccionen a esos estados.
 
 Cuando nosotros metemos una nueva parte en el estado ¿qué hacemos? crear nuestro `reducer` que maneje esa parte del estado `export function ui(state = defaultState.ui, action) {`
+
+
+`reducers.js`
 
 ```js
 import {
@@ -1340,6 +1344,8 @@ export const AUTH_LOGIN_FAILURE = 'auth/login/failure';
 export const UI_RESET_ERROR = 'ui/reset_error';
 ``` 
 
+`reducers.js`
+
 ```js
 export function ui(state = defaultState.ui, action) {
   if (action.error) {
@@ -1362,6 +1368,8 @@ export function ui(state = defaultState.ui, action) {
 }
 ```
 Fíjate que hemos de cambiar el `export function auth(state = defaultState.auth, action) {` que ahora le pertenece `AUTH_LOGIN_SUCCESS` yo pondré loguado a true si el servicio me responde corectamente nunca antes.
+
+`reducers.js`
 
 ```js
 import {
@@ -1428,6 +1436,8 @@ export function ui(state = defaultState.ui, action) {
 
 Ahora que tenemos los tipos necesitas las acciones 
 
+`actions.js`
+
 ```js
 import {
   AUTH_LOGIN_FAILURE,
@@ -1470,7 +1480,9 @@ export const uiResetError = () => ({ type: UI_RESET_ERROR });
 
 Ya puedes ver el `ui` 
 
-Vamos a llevar la logica al compomponente de `LoginPage.js`
+Vamos a llevar la logica al compomponente de 
+
+`LoginPage.js`
 
   `const [error, setError] = useState(null);`  
   `const [isFetching, setIsFeching] = useState(false);`  
@@ -1549,6 +1561,199 @@ function LoginPage() {
 
 ```
 
-1:26"
+![](public/img/13.png)
+
+Hemos metido el error en el strore de redux y el componenete como esta conectado ha esta parte de store lo teemos pindado. Y si clicas en el mensaje de error pondrás el error a nulo.
+
+Esto es una  priera aproximacon hacer acciones asincronas en redux.
+* comienzas la llamada
+* llamas al servicio externo y has de esperar la respuesta /promesa
+* al final cada punto lo podemos asociar a acciones sincronas que podemos cambiar
 
 
+**Refactoring** 
+
+Podemos mejorar el `reducer.js` refactorizando con alguna expresino regular 
+
+```js
+import {
+  AUTH_LOGIN_REQUEST,
+  AUTH_LOGIN_SUCCESS,
+  AUTH_LOGOUT,
+  TWEETS_CREATED,
+  TWEETS_LOADED,
+  UI_RESET_ERROR,
+} from './types';
+
+const defaultState = {
+  auth: false,
+  tweets: [],
+  ui: {
+    isFetching: false,
+    error: null,
+  },
+};
+
+export function auth(state = defaultState.auth, action) {
+  switch (action.type) {
+    case AUTH_LOGIN_SUCCESS:
+      return true;
+    case AUTH_LOGOUT:
+      return false;
+    default:
+      return state;
+  }
+}
+
+export function tweets(state = defaultState.tweets, action) {
+  switch (action.type) {
+    case TWEETS_LOADED:
+      return action.payload;
+    case TWEETS_CREATED:
+    default:
+      return state;
+  }
+}
+
+export function ui(state = defaultState.ui, action) {
+  if (action.error) {
+    return { isFetching: false, error: action.payload };
+  }
+  if (action.type.endsWith('/request')) {
+    return { isFetching: true, error: null };
+  }
+  if (action.type.endsWith('/success')) {
+    return { isFetching: false, error: null };
+  }
+  if (action.type === UI_RESET_ERROR) {
+    return { ...state, error: null };
+  }
+
+  return state;
+}
+```
+
+**Refactoring** 
+
+Somos nosotros lo que tiene que ver con el flujo, despacho acciones, llamo al sercio, esperar, etc 
+
+`loginPage.js`
+
+```js
+    try {
+      dispatch(authLoginRequest()); // despacho acciones
+      await login(credentials); // llamo al sercio
+      dispatch(authLoginSuccess()); // etc
+      const to = location?.state?.from?.pathname || '/';
+      navigate(to);
+    } catch (error) {
+      dispatch(authLoginFailure(error));
+    }
+``` 
+
+estaría bien si al `loginPage` le paso una **accion** que implique todo este flujo, lo unico tenga que hacer es despachar una accion y que por debajo se hiciera todo lo demás. Pero con Reudx de momento henos visto que se pueden hacer acciones sincronas y no asincronas, pero podemos hacer identificar los puntos donde meter estas acciones sincronas, lo unico que podemos despachar son oobjetos, pero si le damos al vuelta pude ser ampliado con un sistea de middelware para pasar funciones. Nos interponemos entre el momento que se despacha la accion y el momento en que llega la accion.
+
+---
+> [!NOTE]
+> Acciones Asíncronas con **Reudx Thunk Middleware**  
+> Léete los slides de Reudx Thunk Middleware
+---
+
+```sh
+npm i redux-thunk
+```
+
+le decimos al gestor de reduc que vamos a utilizar este middleware
+
+`store/index.js`
+
+```js
+import { createStore, combineReducers, applyMiddleware } from 'redux';
+// import { thunk } from 'redux-thunk';
+import { composeWithDevTools } from '@redux-devtools/extension';
+
+import * as reducers from './reducers';
+import * as actionCreators from './actions';
+
+const composeEnhancers = composeWithDevTools({ actionCreators });
+const thunk = store => next => action => {
+  if (typeof action === 'function') {
+    return action(store.dispatch, store.getState);
+  }
+  next(action);
+};
+
+const middleware = [thunk];
+
+export default function configureStore(preloadedState) {
+  const store = createStore(
+    combineReducers(reducers),
+    preloadedState,
+    composeEnhancers(applyMiddleware(...middleware)),
+  );
+  return store;
+}
+```
+
+Me creo una accion creator que siempre devielven objetos, pero *Reudx Thunk Middleware nos permite que devuelve una nueva function
+
+`action.js`
+
+La funcion interna `return async function (dispatch, getState) { //` es lo que va a interceptar el miidleware y esta le dará el dispatch 
+
+```js
+export function authLogin(credentials) {
+  return async function (dispatch, getState) { //
+
+}
+```
+
+Ahora teniedo lo de arriba podría meter todo esto del `loginPage.js` que hablábamos
+
+```js
+export function authLogin(credentials) {
+  return async function (dispatch, getState) {
+    try {
+      dispatch(authLoginRequest());
+      await login(credentials);
+      dispatch(authLoginSuccess());
+    } catch (error) {
+      dispatch(authLoginFailure(error));
+      throw error;
+    }
+  };
+}
+```
+y `loginPage.js` quedaría así
+
+```js
+    try {
+      await dispatch(authLogin(credentials));
+      const to = location?.state?.from?.pathname || '/';
+      navigate(to);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+```
+
+Me he llevado el flujo al `action.js / authLogin(credentials)`.
+
+En definitiva :
+
+https://redux.js.org/understanding/history-and-design/middleware#understanding-middleware 
+
+Sin middleware -> flujo sincrono  
+Con middleware -> flujo asíncrono  
+* Cada middleware envuelve a dispatch e intercepta la acción
+* Podemos emitir cosas distintas a acciones síncronas(funciones, promesas, …)
+* Podemos acceder al estado dentro del middleware
+* Cada middleware puede pasar acciones al siguientemiddleware
+* El último middleware envuelve al dispatch original de Redux, por lo que debe asegurarse que las acciones que le pase son acciones normales de Redux (objetos con type)
+
+
+![](public/img/14.png)
+
+---
+
+Vamos hacer que tengamos la psoibilidad de loguear cada accion y el resultado posterior. Podemos crearnos un Middleware para ello. 

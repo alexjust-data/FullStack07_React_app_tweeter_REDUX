@@ -1,7 +1,7 @@
 import { useParams } from 'react-router';
 import Content from '../../../components/layout/Content';
 import { useSelector } from 'react-redux';
-import { getTweet } from '../../../store/selector';
+import { getTweet } from '../../../store/selectors';
 
 function TweetPage() {
   const params = useParams();

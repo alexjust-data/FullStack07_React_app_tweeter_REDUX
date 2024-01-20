@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Button from '../../../components/shared/Button';
 import { logout } from '../service';
 import { authLogout } from '../../../store/actions';
-import { getIsLogged } from '../../../store/selector';
+import { getIsLogged } from '../../../store/selectors';
 
 function AuthButton({ className, onLogout, isLogged }) {
   // const dispatch = useDispatch();
