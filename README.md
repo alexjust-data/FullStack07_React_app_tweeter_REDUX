@@ -1865,6 +1865,191 @@ Y no te has de preocupar que cada una lleve un tiempo. En el artúculo tienes mu
 
 
 
+### Utilidad del getState [commit : Load tweets thunk]
+
+Utilidad del getState : Tener acceso al estado dentro de una acción.
+
+`types.js` 
+
+```js
+export const TWEETS_LOADED_REQUEST = 'tweets/loaded/request';
+export const TWEETS_LOADED_SUCCESS = 'tweets/loaded/success';
+export const TWEETS_LOADED_FAILURE = 'tweets/loaded/failure';
+```
+
+`actions.js`
+
+```js
+export const tweetsLoadedRequest = () => ({
+  type: TWEETS_LOADED_REQUEST,
+});
+
+export const tweetsLoadedSuccess = tweets => ({
+  type: TWEETS_LOADED_SUCCESS,
+  payload: tweets,
+});
+
+export const tweetsLoadedFailure = error => ({
+  type: TWEETS_LOADED_FAILURE,
+  error: true,
+  payload: error,
+});
+
+// FLUJO DE CARGA DE tweets
+export function loadTweets() {
+    try {
+      dispatch(tweetsLoadedRequest());
+      const tweets = await getLatestTweets();
+      dispatch(tweetsLoadedSuccess(tweets));
+    } catch (error) {
+      dispatch(tweetsLoadedFailure(error));
+      throw error;
+    }
+  };
+}
+```
+
+`reducers.js`
+
+```js
+import {AUTH_LOGIN_SUCCESS,AUTH_LOGOUT,TWEETS_CREATED, TWEETS_LOADED_SUCCESS,UI_RESET_ERROR,
+} from './types';
+
+const defaultState = {
+  auth: false,
+  tweets: [],
+  ui: {
+    isFetching: false,
+    error: null,
+  },
+};
+
+export function tweets(state = defaultState.tweets, action) {
+  switch (action.type) {
+    // case TWEETS_LOADED:
+    case TWEETS_LOADED_SUCCESS:
+      return action.payload ;
+
+    case TWEETS_CREATED:
+    default:
+      return state;
+  }
+}
+```
+
+Fíajte que tieniedo aquí esta informacion `tweets: [],` que es un array, yo lo que quiero saber es si se han cargado los tweets o no. Si el array está vacío yo no se si ya se ha llamado al api o no. Voy a refactorizar para indicar queya se han cargado y la data de la carga. Si no es asñi nunca sabría si yaa se llamo al api, esto es bueno par que no repitamos las llamadas.:
+
+```js
+const defaultState = {
+  auth: false,
+  tweets: {
+    areLoaded: false,
+    data: [],
+  },
+  ui: {
+    isFetching: false,
+    error: null,
+  },
+};
+
+
+export function tweets(state = defaultState.tweets, action) {
+  switch (action.type) {
+    case TWEETS_LOADED_SUCCESS:
+      return { areLoaded: true, data: action.payload }; // cambio esto tbn
+
+    case TWEETS_CREATED:
+    default:
+      return state;
+  }
+}
+```
+
+Ahora en el componente 
+
+`tweetsPage.js`  
+
+```js
+// ANTES
+function TweetsPage() {
+  const tweets = useSelector(getTweets);
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    getLatestTweets().then(tweets => {
+      dispatch(tweetsLoaded(tweets));
+    });
+  }, [dispatch]);
+
+// DESPUES
+function TweetsPage() {
+  const tweets = useSelector(getTweets); // ... y se conecta para mostarlo
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(loadTweets()); // Despacha la accion de carga de tweets y ...
+  }, [dispatch]);
+  ...
+```
+
+el problema ahora es que el selector `useSelector(getTweets)` que es `getTweets` está apuntando a `state.tweets` en 
+
+`selectors.js`
+
+```js
+// ANTES
+export const getTweets = state => state.tweets;
+
+//DESPUES
+export const getTweets = state => state.tweets.data;
+```
+> [!TIP]
+>  En el mismo selector, quiero que si ya se han crgado los tweets no se vuelvan a cargar
+
+```js
+export const areTweetsLoaded = state => state.tweets.areLoaded;
+```
+Le meto un condicional a la accion si pasándole el state de `getState` preguntamos si están cargados
+
+`actions.js` 
+
+```js
+export function loadTweets() {
+  return async function (dispatch, getState) {
+    if (areTweetsLoaded(getState())) {
+      return;
+    }
+
+    try {
+      dispatch(tweetsLoadedRequest());
+      const tweets = await getLatestTweets();
+      dispatch(tweetsLoadedSuccess(tweets));
+    } catch (error) {
+      dispatch(tweetsLoadedFailure(error));
+      throw error;
+    }
+  };
+}
+```
+
+Fíjate que me permite dentro de las acciones tener acceso al valor del estado, es decir, puedo meter lógica en funcion de lo que quiera.
+
+**lo mismo con el detalla de cada tweet**
+
+El detalla de Tweet tiene que tener una acción similar, es decir, tengo una acción de cargar mi detalle... pero si mi detalle ya está en redux no lo cargo y lo cojo directamente 
+
+es un mecanismo para controlar cuando quiero caché y cuando no.
+
+
+
+
+
+
+
+
+
+
+
 
 
 

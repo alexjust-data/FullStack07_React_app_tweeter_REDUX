@@ -1,14 +1,13 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getLatestTweets } from '../service';
 import Button from '../../../components/shared/Button';
 import Content from '../../../components/layout/Content';
 import Tweet from '../components/Tweet';
 
 import './TweetsPage.css';
 import { useDispatch, useSelector } from 'react-redux';
-import { tweetsLoaded } from '../../../store/actions';
 import { getTweets } from '../../../store/selectors';
+import { loadTweets } from '../../../store/actions';
  
 const EmptyList = () => (
   <div className="tweetsPage-empty">
@@ -22,9 +21,7 @@ function TweetsPage() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    getLatestTweets().then(tweets => {
-      dispatch(tweetsLoaded(tweets));
-    });
+    dispatch( loadTweets());
   }, [dispatch]);
 
   return (

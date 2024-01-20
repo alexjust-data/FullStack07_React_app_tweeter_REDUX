@@ -6,5 +6,8 @@ export const UI_RESET_ERROR = 'ui/reset_error';
 
 export const AUTH_LOGOUT = 'auth/logout';
 
-export const TWEETS_LOADED = 'tweets/loaded';
+export const TWEETS_LOADED_REQUEST = 'tweets/loaded/request';
+export const TWEETS_LOADED_SUCCESS = 'tweets/loaded/success';
+export const TWEETS_LOADED_FAILURE = 'tweets/loaded/failure';
+
 export const TWEETS_CREATED = 'tweets/created';
