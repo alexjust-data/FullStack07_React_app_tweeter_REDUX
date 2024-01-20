@@ -2220,7 +2220,246 @@ TENEMOS las dos opciones
 **Inyectamos el navegate de Route**
 
 
-Así llevamos la accion con la respuesta
+1. poder inyectar no solo el api, sino dentro del objeto inyectar el `Router` para en las acciones despues de las respuestas del api se pueda navegar a l pagina que quiera.
+
+`store/index.js`
+
+le meto dentro el middelware
+
+```js
+export default function configureStore(preloadedState, { router }) {
+  const middleware = [
+    withExtraArgument({ api: { auth, tweets }, router }),
+    timestamp,
+    logger,
+    noAction,
+  ];
+  const store = createStore(
+    combineReducers(reducers),
+    preloadedState,
+    composeEnhancers(applyMiddleware(...middleware)),
+    // window.__REDUX_DEVTOOLS_EXTENSION__ &&
+    //   window.__REDUX_DEVTOOLS_EXTENSION__(),
+  );
+  return store;
+}
+```
+
+`actions.js`
+
+```js
+// ANTES
+export function authLogin(credentials) {
+  return async function (dispatch, getState, { api: { auth } }) {
+    try {
+      dispatch(authLoginRequest());
+      await auth.login(credentials);
+      dispatch(authLoginSuccess());
+    } catch (error) {
+      dispatch(authLoginFailure(error));
+      throw error;
+    }
+  };
+}
+// DESPUES
+export function authLogin(credentials) {
+  return async function (dispatch, getState, { api: { auth }, router }) {
+    try {
+      dispatch(authLoginRequest());
+      await auth.login(credentials);
+      dispatch(authLoginSuccess());
+      const to = router.state.location.state?.from?.pathname || '/'; // <-----
+      router.navigate(to); // <-----
+    } catch (error) {
+      dispatch(authLoginFailure(error));
+      throw error;
+    }
+  };
+}
+```
+
+todo esto que he añadido aquí básicamente es lo que viene en el `loginPage/handleSubmit`
+
+```js
+    try {
+      await dispatch(authLogin(credentials));
+      const to = location?.state?.from?.pathname || '/';
+      navigate(to);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+```
+
+Quitamos cosas `loginPage`
+
+```js
+//ANTES
+function LoginPage() {
+  const dispatch = useDispatch();
+  const { isFetching, error } = useSelector(getUi);
+
+  const [credentials, setCredentials] = useState({
+    username: '',
+    password: '',
+  });
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleSubmit = async event => {
+    event.preventDefault();
+
+    try {
+      await dispatch(authLogin(credentials));
+      const to = location?.state?.from?.pathname || '/';
+      navigate(to);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+// DESPUES
+function LoginPage() {
+  const dispatch = useDispatch();
+  const { isFetching, error } = useSelector(getUi);
+
+  const [credentials, setCredentials] = useState({
+    username: '',
+    password: '',
+  });
+
+  const handleSubmit = event => {
+    event.preventDefault();
+    dispatch(authLogin(credentials));
+  };
+``` 
+
+Ahora mismo el sumit simplemente es un dispatch, el  mismoc odigo se lo inyecto por el Router `router.state.location.state?.from?.pathname || '/';`
+
+
+**¿Qué falta cambiar?**
+
+`Root`
+
+esto que estamos usando `<BrowserRouter>` viene con un BrowserRouter ya configurado. Sin enbargo puedo utilizar otro componente `RouterProvider` que acepta un objeto router
+
+La idea es que el mismo objeto router que yo voy a inyectar a las acciones va a ser el que va a manejar 
+la navegación de mi aplicacion. El anterior compnente no me permití ahacerlo y yo quiero crearme mi propio objeto router y pasarlo.
+
+Para ello me voy a `Index` y me creo un Router
+
+`scr/Index`
+
+```js
+import { createBrowserRouter } from 'react-router-dom';
+
+const router = createBrowserRouter([{ path: '*', element: <App /> }]);
+
+const store = configureStore({ auth: !!accessToken }, { router }); // se lo paso por aquí
+
+//ANTES
+root.render(
+  <React.StrictMode>
+    <ErrorBoundary>
+      <Root store={store} router={router} >
+          <App />
+      </Root>
+    </ErrorBoundary>
+  </React.StrictMode>,
+);
+//DESPUES
+root.render(
+  <React.StrictMode>
+    <ErrorBoundary>
+      <Root store={store} router={router} />
+    </ErrorBoundary>
+  </React.StrictMode>,
+);
+```
+Fíjate que como la le hemos pasado el `element: <App />` no podemos repetirlo en `root.render(`
+
+---
+
+cualquier ruta que la enrute al elemento `<App />` y esta ruta se la he pasado al  
+`<Root store={store} router={router} />`
+
+por lo tanto nos vamos a meter en `Root`
+
+```js
+export default function Root({ store, router }) {
+  return (
+    <Provider store={store}>
+      <Router router={router} />
+    </Provider>
+  );
+```
+
+como se lo he pasado por aquí `store = configureStore({ auth: !!accessToken }, { router });`
+
+a través de `configureStore(` llegará al `store/index/ExtraArgument` que me va a llevar a las acciones
+
+```js
+export default function configureStore(preloadedState, { router }) {
+  const middleware = [
+    withExtraArgument({ api: { auth, tweets }, router }),
+    timestamp,
+    logger,
+    noAction,
+  ];
+```
+
+Inyectando el router hemos dejado el componete loginPage muy sencillo, solo se dedica a cojer las credenciales y despacharlas. T
+
+```js
+  const handleSubmit = event => {
+    event.preventDefault();
+    dispatch(authLogin(credentials));
+  };
+```
+
+todo el flujo lo hce Redux de una forma centralizada en acciones `actions`
+
+```js
+export function authLogin(credentials) {
+  return async function (dispatch, getState, { api: { auth }, router }) {
+    try {
+      dispatch(authLoginRequest());
+      await auth.login(credentials);
+      dispatch(authLoginSuccess());
+      const to = router.state.location.state?.from?.pathname || '/';
+      router.navigate(to);
+    } catch (error) {
+      dispatch(authLoginFailure(error));
+      throw error;
+    }
+  };
+}
+```
+
+es como barrer la casa y dejarlo todo por debajo.
+hemos de dejar que los compnente pinten cosas en pantalla todo lo demás por debajo.
+
+Profiero inyectar a hacer un `import` 
+* es más facil
+* menos dependencias
+* mejor para el test
+* mejor para refactor
+  
+esta es la idea de centralizar
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

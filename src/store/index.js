@@ -1,5 +1,5 @@
 import { createStore, combineReducers, applyMiddleware } from 'redux';
-import { thunk, withExtraArgument } from 'redux-thunk';
+import { withExtraArgument } from 'redux-thunk';
 import { composeWithDevTools } from '@redux-devtools/extension';
 
 import * as reducers from './reducers';
@@ -40,14 +40,13 @@ const timestamp = () => next => action => {
   });
 };
 
-const middleware = [
-  withExtraArgument({ api: { auth, tweets } }),
-  timestamp,
-  logger,
-  noAction,
-];
-
-export default function configureStore(preloadedState) {
+export default function configureStore(preloadedState, { router }) {
+  const middleware = [
+    withExtraArgument({ api: { auth, tweets }, router }),
+    timestamp,
+    logger,
+    noAction,
+  ];
   const store = createStore(
     combineReducers(reducers),
     preloadedState,

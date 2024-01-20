@@ -4,11 +4,7 @@ import Button from '../../../components/shared/Button';
 import FormField from '../../../components/shared/FormField';
 
 import './LoginPage.css';
-import { useLocation, useNavigate } from 'react-router';
-import {
-  authLogin,
-  uiResetError,
-} from '../../../store/actions';
+import { authLogin, uiResetError } from '../../../store/actions';
 import { getUi } from '../../../store/selectors';
 
 function LoginPage() {
@@ -19,19 +15,10 @@ function LoginPage() {
     username: '',
     password: '',
   });
-  const location = useLocation();
-  const navigate = useNavigate();
 
-  const handleSubmit = async event => {
+  const handleSubmit = event => {
     event.preventDefault();
-
-    try {
-      await dispatch(authLogin(credentials));
-      const to = location?.state?.from?.pathname || '/';
-      navigate(to);
-    } catch (error) {
-      console.log(error);
-    }
+    dispatch(authLogin(credentials));
   };
 
   const handleChange = event => {

@@ -1,5 +1,3 @@
-import { login } from '../pages/auth/service';
-import { getLatestTweets } from '../pages/tweets/service';
 import { areTweetsLoaded } from './selectors';
 import {
   AUTH_LOGIN_FAILURE,
@@ -27,11 +25,13 @@ export const authLoginFailure = error => ({
 });
 
 export function authLogin(credentials) {
-  return async function (dispatch, getState, { api: { auth } }) {
+  return async function (dispatch, getState, { api: { auth }, router }) {
     try {
       dispatch(authLoginRequest());
       await auth.login(credentials);
       dispatch(authLoginSuccess());
+      const to = router.state.location.state?.from?.pathname || '/';
+      router.navigate(to);
     } catch (error) {
       dispatch(authLoginFailure(error));
       throw error;
