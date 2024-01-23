@@ -2861,9 +2861,53 @@ fíjate que voy a leminar todo esto porque los errores los manejare fuera
 
 ```
 
-> [!NOTE] Lo importante es saber en qué puntos podemos llamar a  la accion, dentro de la acción identificar los puntos request, error o success, y a continuación de eso tratar las acciones correctamente en los reducer
+> [!NOTE] 
+> Lo importante es saber en qué puntos podemos llamar a  la accion, dentro de la acción identificar los puntos request, error o success, y a continuación de eso tratar las acciones correctamente en los reducer.
+
+**LogOut** 
+
+> ![NOTE]  
+> Hazlo tu, es la única llamada al servicio  
+> 1:30h hazlo para la práctica  
+> La idea es que es que los componentes, si veo algún importe en un componente de una llamada a un servicio, ella es un punto de uy aquí esto se está manejando localmente.El componente debería hablar con redes. Si yo tengo el flujo metido en reus pues el componente debería hablar con redes, le vamos a quitar a componente que él se tenga que encargar de hacer más de una cosa Eso sería la idea llamar al servicio, llamar a la acción, etcétera.No llamas a la acción de Redus y la acción de reduce por debajo que haga todo lo que tiene que hacer.De hecho, yo creo que la única llamada al servicio que nos queda pendiente de sacar sería esta, en este caso.Yo creo que ya no hay ninguna más Si Si la hubiera, tendría que haber imports por aquí, veis que no los tenemos.Lo único que tenemos es el nogado. Entonces ya sacáis esta ya lo dejáis limpio y el único sitio donde estaríamos.Teniendo las llamadas a nuestro servicio, sería aquí en la creación de la creación del estado del Store, porque a partir de aquí recordad que la estábamos inyectando con el extra argumen del turco.Luego tenemos todas las dependencias de mi App. Las tengo bastante bastante localizadas, centralizadas
 
 
+**Errores** 
+
+commit : Failure redirect middleware
+
+
+Hay errores bastante repetitivos 401 o 404
+
+Me creo un Middelware
+
+`store/index.js`
+
+```js
+const failureRedirects = (router, redirectsMap) => store => next => action => {
+  // ejecuta la acción
+  const result = next(action);
+
+  if (action.error) {
+    // según el status 401/404
+    const redirect = redirectsMap[action.payload.status];
+    if (redirect) {
+      router.navigate(redirect);
+    }
+  }
+
+  return result;
+};
+
+export default function configureStore(preloadedState, { router }) {
+  const middleware = [
+    withExtraArgument({ api: { auth, tweets }, router }),
+    timestamp,
+    failureRedirects(router, { 401: '/login', 404: '/404' }), // <------ se la paso: failureRedirects()
+    logger,
+    noAction,
+  ];
+```
 
 
 

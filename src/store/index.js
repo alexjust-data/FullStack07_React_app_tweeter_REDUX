@@ -40,10 +40,24 @@ const timestamp = () => next => action => {
   });
 };
 
+const failureRedirects = (router, redirectsMap) => store => next => action => {
+  const result = next(action);
+
+  if (action.error) {
+    const redirect = redirectsMap[action.payload.status];
+    if (redirect) {
+      router.navigate(redirect);
+    }
+  }
+
+  return result;
+};
+
 export default function configureStore(preloadedState, { router }) {
   const middleware = [
     withExtraArgument({ api: { auth, tweets }, router }),
     timestamp,
+    failureRedirects(router, { 401: '/login', 404: '/404' }),
     logger,
     noAction,
   ];

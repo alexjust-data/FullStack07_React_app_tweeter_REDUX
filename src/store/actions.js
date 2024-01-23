@@ -40,7 +40,6 @@ export function authLogin(credentials) {
       router.navigate(to);
     } catch (error) {
       dispatch(authLoginFailure(error));
-      throw error;
     }
   };
 }
@@ -76,7 +75,6 @@ export function loadTweets() {
       dispatch(tweetsLoadedSuccess(tweetsList));
     } catch (error) {
       dispatch(tweetsLoadedFailure(error));
-      throw error;
     }
   };
 }
@@ -108,11 +106,9 @@ export function detailTweets(tweetId) {
       dispatch(tweetsDetailSuccess(tweet));
     } catch (error) {
       dispatch(tweetsDetailFailure(error));
-      throw error;
     }
   };
 }
-
 
 export const tweetsCreatedRequest = () => ({
   type: TWEETS_CREATED_REQUEST,
@@ -134,12 +130,12 @@ export function createTweet(tweet) {
     try {
       dispatch(tweetsCreatedRequest());
       const { id } = await tweets.createTweet(tweet);
+      // To complete tweet info
       const createdTweet = await tweets.getTweet(id);
       dispatch(tweetsCreatedSuccess(createdTweet));
       router.navigate(`/tweets/${createdTweet.id}`);
     } catch (error) {
       dispatch(tweetsCreatedFailure(error));
-      throw error;
     }
   };
 }
