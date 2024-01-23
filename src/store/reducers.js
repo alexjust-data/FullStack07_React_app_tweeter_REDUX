@@ -1,7 +1,7 @@
 import {
   AUTH_LOGIN_SUCCESS,
   AUTH_LOGOUT,
-  TWEETS_CREATED,
+  TWEETS_CREATED_SUCCESS,
   TWEETS_DETAIL_SUCCESS,
   TWEETS_LOADED_SUCCESS,
   UI_RESET_ERROR,
@@ -60,10 +60,12 @@ export function tweets(state = defaultState.tweets, action) {
       return { areLoaded: true, data: action.payload };
 
     case TWEETS_DETAIL_SUCCESS:
+      // return { ...state, data: [...state.data, action.payload] };
       return { areLoaded: false, data: [action.payload] };
-    // return { ...state, data: [...state.data, action.payload] };
 
-    case TWEETS_CREATED:
+    case TWEETS_CREATED_SUCCESS:
+      return { ...state, data: [action.payload, ...state.data] };
+
     default:
       return state;
   }

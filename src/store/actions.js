@@ -4,6 +4,9 @@ import {
   AUTH_LOGIN_REQUEST,
   AUTH_LOGIN_SUCCESS,
   AUTH_LOGOUT,
+  TWEETS_CREATED_REQUEST,
+  TWEETS_CREATED_SUCCESS,
+  TWEETS_CREATED_FAILURE,
   TWEETS_DETAIL_FAILURE,
   TWEETS_DETAIL_REQUEST,
   TWEETS_DETAIL_SUCCESS,
@@ -105,6 +108,37 @@ export function detailTweets(tweetId) {
       dispatch(tweetsDetailSuccess(tweet));
     } catch (error) {
       dispatch(tweetsDetailFailure(error));
+      throw error;
+    }
+  };
+}
+
+
+export const tweetsCreatedRequest = () => ({
+  type: TWEETS_CREATED_REQUEST,
+});
+
+export const tweetsCreatedSuccess = tweet => ({
+  type: TWEETS_CREATED_SUCCESS,
+  payload: tweet,
+});
+
+export const tweetsCreatedFailure = error => ({
+  type: TWEETS_CREATED_FAILURE,
+  error: true,
+  payload: error,
+});
+
+export function createTweet(tweet) {
+  return async function (dispatch, _getState, { api: { tweets }, router }) {
+    try {
+      dispatch(tweetsCreatedRequest());
+      const { id } = await tweets.createTweet(tweet);
+      const createdTweet = await tweets.getTweet(id);
+      dispatch(tweetsCreatedSuccess(createdTweet));
+      router.navigate(`/tweets/${createdTweet.id}`);
+    } catch (error) {
+      dispatch(tweetsCreatedFailure(error));
       throw error;
     }
   };

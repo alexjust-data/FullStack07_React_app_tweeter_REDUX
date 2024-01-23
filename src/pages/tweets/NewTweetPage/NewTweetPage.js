@@ -1,13 +1,14 @@
 import PropTypes from 'prop-types';
+import { useDispatch, useSelector } from 'react-redux';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Content from '../../../components/layout/Content';
 import Button from '../../../components/shared/Button';
 import Photo from '../../../components/shared/Photo';
 import Textarea from '../../../components/shared/Textarea';
+import { createTweet } from '../../../store/actions';
 
 import './NewTweetPage.css';
-import { createTweet } from '../service';
-import { useNavigate } from 'react-router';
+import { getUi } from '../../../store/selectors';
 
 const MIN_CHARACTERS = 5;
 const MAX_CHARACTERS = 140;
@@ -87,8 +88,8 @@ function NewTweetPageForm({ isFetching, onSubmit }) {
 }
 
 function NewTweetPage() {
-  const [isFetching, setIsFetching] = useState(false);
-  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { isFetching } = useSelector(getUi);
   const counterRef = useRef(0);
   const formRef = useRef(null);
   const divRef = useRef(null);
@@ -104,18 +105,7 @@ function NewTweetPage() {
   }, []);
 
   const handleSubmit = async content => {
-    try {
-      setIsFetching(true);
-      const tweet = await createTweet({ content });
-      navigate(`../${tweet.id}`, { relative: 'path' });
-    } catch (error) {
-      if (error.status === 401) {
-        navigate('/login');
-      } else {
-        setIsFetching(false);
-        // Show errorMemoHeavyComponent
-      }
-    }
+    dispatch(createTweet({ content }));
   };
 
   const callback = useCallback(() => {}, []);

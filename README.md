@@ -2632,7 +2632,7 @@ pero después del primer render el componente va a tirar la acción
 
 como en este caso todavía no tenemos la información en el `store` de ese tweet
 
-`action`
+`action.js`
 
 ```js 
 // action
@@ -2662,7 +2662,7 @@ pues se despacha todo el flujo que le sigue
 
 el `tweetsDetailSuccess(tweet)` nos llama  a esta acción `type: TWEETS_DETAIL_SUCCESS,` y llegamos al 
 
-`reducer` 
+`reducer.js` 
 
 ```js
 export function tweets{...
@@ -2697,7 +2697,7 @@ Además puedes ver que está haciendo la petición, está llamando a `http://loc
 
 Ahora tienes que traerte `?_expand=user&_embed=likes` al `export const getTweet = tweetId => {` en 
 
-`/tweets/service`
+`/tweets/service.js`
 
 ```js
 import client from '../../api/client';
@@ -2720,6 +2720,153 @@ export const getTweet = tweetId => {
   return client.get(url);
 };
 ```
+
+**Creando un Tweet**
+
+Tipo accion `created`
+
+`type.js`
+
+```js
+export const TWEETS_CREATED_REQUEST = 'tweets/created/request';
+export const TWEETS_CREATED_SUCCESS = 'tweets/created/success';
+export const TWEETS_CREATED_FAILURE = 'tweets/created/failure';
+```
+
+Creando el caso de la accion `case TWEETS_CREATED_SUCCESS:`
+
+`reducer.js`
+
+```js
+export function tweets(state = defaultState.tweets, action) {
+  switch (action.type) {
+    case TWEETS_LOADED_SUCCESS:
+      return { areLoaded: true, data: action.payload };
+
+    case TWEETS_DETAIL_SUCCESS:
+      // return { ...state, data: [...state.data, action.payload] };
+      return { areLoaded: false, data: [action.payload] };
+
+    case TWEETS_CREATED_SUCCESS:
+      return { ...state, data: [action.payload, ...state.data] };
+
+    default:
+      return state;
+  }
+}
+```
+
+`action.js`
+
+```js
+export const tweetsCreatedRequest = () => ({
+  type: TWEETS_CREATED_REQUEST,
+});
+
+export const tweetsCreatedSuccess = tweet => ({
+  type: TWEETS_CREATED_SUCCESS,
+  payload: tweet,
+});
+
+export const tweetsCreatedFailure = error => ({
+  type: TWEETS_CREATED_FAILURE,
+  error: true,
+  payload: error,
+});
+
+export function createTweet(tweet) { // estamos enviado un objeto tweet <-------------
+  return async function (dispatch, _getState, { api: { tweets }, router }) {
+    try {
+      dispatch(tweetsCreatedRequest());
+      const { id } = await tweets.createTweet(tweet);
+      const createdTweet = await tweets.getTweet(id);
+      dispatch(tweetsCreatedSuccess(createdTweet));
+      router.navigate(`/tweets/${createdTweet.id}`);
+    } catch (error) {
+      dispatch(tweetsCreatedFailure(error));
+      throw error;
+    }
+  };
+}
+```
+
+`createTweet(tweet)` estamos enviado un objeto tweet <-------------
+
+cuando hacemos `NewTweetPage.js` estamos enviando el content:
+
+```js
+  const handleSubmit = event => {
+    event.preventDefault();
+    onSubmit(content);
+  };
+```
+y este `onSubmit(content);` llama a `createTweet({ content })`
+
+```js
+  const handleSubmit = async content => {
+    dispatch(createTweet({ content }));
+  };
+``` 
+entonces al api es pasarle un objeto con todo el tweet. Este mismo objeto será lo que le voy a pasar a la acción porque luego la acción se la va a pasar al servicio. 
+en `service` le pasabamos un ` tweet => {` con el metodo createTweet
+
+```js
+export const createTweet = tweet => {
+  const url = tweetsUrl;
+  return client.post(url, tweet);
+};
+```
+y en `action` le paso el tweet `const { id } = await tweets.createTweet(tweet);` 
+
+```js
+    try {
+      dispatch(tweetsDetailRequest());
+      const tweet = await tweets.getTweet(tweetId);
+```
+--- 
+
+Ahora el componente tiene que hacer el dispatc y el effect
+
+`NewTweetPage.js`
+
+```js
+function NewTweetPage() {
+  const dispatch = useDispatch();
+  const { isFetching } = useSelector(getUi); // esto cambiará nuestra acción
+```
+
+fíjate que voy a leminar todo esto porque los errores los manejare fuera
+
+```js
+// ANTES
+  const handleSubmit = async content => {
+    try {
+      setIsFetching(true);
+      const tweet = await createTweet({ content });
+      navigate(`../${tweet.id}`, { relative: 'path' });
+    } catch (error) {
+      if (error.status === 401) {
+        navigate('/login');
+      } else {
+        setIsFetching(false);
+        // Show errorMemoHeavyComponent
+      }
+    }
+  };
+
+// DESPUES
+  const handleSubmit = async content => {
+    dispatch(createTweet({ content }));
+  };
+
+```
+
+> [!NOTE] Lo importante es saber en qué puntos podemos llamar a  la accion, dentro de la acción identificar los puntos request, error o success, y a continuación de eso tratar las acciones correctamente en los reducer
+
+
+
+
+
 
 
 
