@@ -2,6 +2,7 @@ import {
   AUTH_LOGIN_SUCCESS,
   AUTH_LOGOUT,
   TWEETS_CREATED,
+  TWEETS_DETAIL_SUCCESS,
   TWEETS_LOADED_SUCCESS,
   UI_RESET_ERROR,
 } from './types';
@@ -57,6 +58,10 @@ export function tweets(state = defaultState.tweets, action) {
   switch (action.type) {
     case TWEETS_LOADED_SUCCESS:
       return { areLoaded: true, data: action.payload };
+
+    case TWEETS_DETAIL_SUCCESS:
+      return { areLoaded: false, data: [action.payload] };
+    // return { ...state, data: [...state.data, action.payload] };
 
     case TWEETS_CREATED:
     default:

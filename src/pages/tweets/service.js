@@ -13,6 +13,6 @@ export const createTweet = tweet => {
 };
 
 export const getTweet = tweetId => {
-  const url = `${tweetsUrl}/${tweetId}`;
+  const url = `${tweetsUrl}/${tweetId}?_expand=user&_embed=likes`;
   return client.get(url);
 };

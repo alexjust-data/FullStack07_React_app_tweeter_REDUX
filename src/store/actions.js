@@ -1,9 +1,12 @@
-import { areTweetsLoaded } from './selectors';
+import { areTweetsLoaded, getTweet } from './selectors';
 import {
   AUTH_LOGIN_FAILURE,
   AUTH_LOGIN_REQUEST,
   AUTH_LOGIN_SUCCESS,
   AUTH_LOGOUT,
+  TWEETS_DETAIL_FAILURE,
+  TWEETS_DETAIL_REQUEST,
+  TWEETS_DETAIL_SUCCESS,
   TWEETS_LOADED_FAILURE,
   TWEETS_LOADED_REQUEST,
   TWEETS_LOADED_SUCCESS,
@@ -70,6 +73,38 @@ export function loadTweets() {
       dispatch(tweetsLoadedSuccess(tweetsList));
     } catch (error) {
       dispatch(tweetsLoadedFailure(error));
+      throw error;
+    }
+  };
+}
+
+export const tweetsDetailRequest = () => ({
+  type: TWEETS_DETAIL_REQUEST,
+});
+
+export const tweetsDetailSuccess = tweet => ({
+  type: TWEETS_DETAIL_SUCCESS,
+  payload: tweet,
+});
+
+export const tweetsDetailFailure = error => ({
+  type: TWEETS_DETAIL_FAILURE,
+  error: true,
+  payload: error,
+});
+
+export function detailTweets(tweetId) {
+  return async function (dispatch, getState, { api: { tweets } }) {
+    if (getTweet(tweetId)(getState())) {
+      return;
+    }
+
+    try {
+      dispatch(tweetsDetailRequest());
+      const tweet = await tweets.getTweet(tweetId);
+      dispatch(tweetsDetailSuccess(tweet));
+    } catch (error) {
+      dispatch(tweetsDetailFailure(error));
       throw error;
     }
   };

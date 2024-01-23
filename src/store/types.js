@@ -10,4 +10,8 @@ export const TWEETS_LOADED_REQUEST = 'tweets/loaded/request';
 export const TWEETS_LOADED_SUCCESS = 'tweets/loaded/success';
 export const TWEETS_LOADED_FAILURE = 'tweets/loaded/failure';
 
+export const TWEETS_DETAIL_REQUEST = 'tweets/detail/request';
+export const TWEETS_DETAIL_SUCCESS = 'tweets/detail/success';
+export const TWEETS_DETAIL_FAILURE = 'tweets/detail/failure';
+
 export const TWEETS_CREATED = 'tweets/created';

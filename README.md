@@ -2447,13 +2447,279 @@ Profiero inyectar a hacer un `import`
   
 esta es la idea de centralizar
 
+**Detalle del Tweet**
+
+Ahora mismo si cargamos la página de los tweets y clicamos el detalle podemos ver como redux ha almacenado toda la informacion de todos los twwets
+
+![](public/img/18.png)
+
+pero si recargamos la página vemos también como se han borrado, como estamos perdiendo todo el estado de memoria no inta nada.
+
+![](public/img/19.png)
 
 
+Se me ocuure que podríamos tener una acción para cargar el detalle y que esa acción fuese capaz de manegar desde el detalle que carga un único tweet , esa acción llamarla siempre desde el componente detalle y luego internamente en la acción podemos afinar y decir que si ya lo tiene cargado le puedo ahorrar esa petición y si no lo tengo cargado voy hacer la petición y voy a tener una acción y un reducer que permita meter al menos ese twwet en el estado.
+
+`types.js`
+
+```js
+export const TWEETS_DETAIL_REQUEST = 'tweets/detail/request';
+export const TWEETS_DETAIL_SUCCESS = 'tweets/detail/success';
+export const TWEETS_DETAIL_FAILURE = 'tweets/detail/failure';
+```
+
+`actions`
+
+```js
+// creamos las tres acciones
+export const tweetsDetailRequest = () => ({
+  type: TWEETS_DETAIL_REQUEST,
+});
+
+export const tweetsDetailSuccess = tweet => ({
+  type: TWEETS_DETAIL_SUCCESS,
+  payload: tweet,
+});
+
+export const tweetsDetailFailure = error => ({
+  type: TWEETS_DETAIL_FAILURE,
+  error: true,
+  payload: error,
+});
+
+export function detailTweets(tweetId) {
+}
+```
+
+Antes de ponernos a manejar la accion asincrona de thunk lo que haremos será darle cobertura  a estas tres tipos a estas tres acciones en nuetro reducer
+
+`reducer`
+
+lo que haré será integrarlo en `tweets` e `ui` sería igual
 
 
+```js
+export function tweets(state = defaultState.tweets, action) {
+  switch (action.type) {
+    case TWEETS_LOADED_SUCCESS:
+      return { areLoaded: true, data: action.payload };
+
+    case TWEETS_DETAIL_SUCCESS:
+      return { areLoaded: false, data: [action.payload] };
+    // return { ...state, data: [...state.data, action.payload] };
+
+    case TWEETS_CREATED:
+    default:
+      return state;
+  }
+}
+```
+
+Ahora falta manejar la acción completa del Thun
+
+`action.js`
+
+```js
+export const tweetsDetailRequest = () => ({
+  type: TWEETS_DETAIL_REQUEST,
+});
+
+export const tweetsDetailSuccess = tweet => ({
+  type: TWEETS_DETAIL_SUCCESS,
+  payload: tweet,
+});
+
+export const tweetsDetailFailure = error => ({
+  type: TWEETS_DETAIL_FAILURE,
+  error: true,
+  payload: error,
+});
+
+export function detailTweets(tweetId) {
+  return async function (dispatch, getState, { api: { tweets } }) {
+    // con el selector: si el tweet existe... no hagas nada
+    if (getTweet(tweetId)(getState())) {
+      return;
+    }
+
+    try {
+      dispatch(tweetsDetailRequest());
+      const tweet = await tweets.getTweet(tweetId);
+      dispatch(tweetsDetailSuccess(tweet));
+    } catch (error) {
+      dispatch(tweetsDetailFailure(error));
+      throw error;
+    }
+  };
+}
+```
+
+Recuerda que desde TweetPage tenemos acceso a la url `const params = useParams();` y como tenemos este acceso en la accion que pide este compnente para crgar su propio twwet  `useSelector(getTweet(params.tweetId));` vamos a tener el `params.tweetId` es decir tendremos el id del tweet y es por eso que la accion anterior tendrá el atributo `export function detailTweets(tweetId) {`
+
+Para disparar la acció necesitamos un `useEffect(()` en 
+
+`TweetPage`
+
+```js
+// ANTES 
+function TweetPage() {
+  const params = useParams();
+  const tweet = useSelector(getTweet(params.tweetId));
+
+  return (
+    <Content title="Tweet detail">
+      <div>
+        Tweet detail {params.tweetId} goes here...
+        {tweet && (
+          <div>
+            <code>{JSON.stringify(tweet)}</code>
+          </div>
+        )}
+      </div>
+    </Content>
+  );
+}
+
+export default TweetPage;
+
+// DESPUES
+function TweetPage() {
+  const params = useParams();
+  const tweet = useSelector(getTweet(params.tweetId));
+
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(detailTweets(params.tweetId));
+  }, [dispatch, params.tweetId]);
+
+  return (
+    <Content title="Tweet detail">
+      <div>
+        Tweet detail {params.tweetId} goes here...
+        {tweet && (
+          <div>
+            <code>{JSON.stringify(tweet)}</code>
+          </div>
+        )}
+      </div>
+    </Content>
+  );
+}
+
+export default TweetPage;
+```
+
+Fíjate que cuando el usuario haga una recarga de la página, el selector va a intentar traerse info pero no va a traer nada `const tweet = useSelector(getTweet(params.tweetId));` y esto no pintará nada   
+`TweetPage`  
+
+```js
+        {tweet && (
+          <div>
+            <code>{JSON.stringify(tweet)}</code>
+          </div>
+        )}
+ ```
+
+pero después del primer render el componente va a tirar la acción  
+`TweetPage`  
+
+```js
+  useEffect(() => {
+    dispatch(detailTweets(params.tweetId));
+  }, [dispatch, params.tweetId]);
+```
+
+como en este caso todavía no tenemos la información en el `store` de ese tweet
+
+`action`
+
+```js 
+// action
+    if (getTweet(tweetId)(getState())) {
+      return;
+    }
+```
+
+pues se despacha todo el flujo que le sigue
+
+```js
+  return async function (dispatch, getState, { api: { tweets } }) {
+    if (getTweet(tweetId)(getState())) {
+      return;
+    }
+
+    try {
+      dispatch(tweetsDetailRequest());
+      const tweet = await tweets.getTweet(tweetId);
+      dispatch(tweetsDetailSuccess(tweet));
+    } catch (error) {
+      dispatch(tweetsDetailFailure(error));
+      throw error;
+    }
+  };
+```
+
+el `tweetsDetailSuccess(tweet)` nos llama  a esta acción `type: TWEETS_DETAIL_SUCCESS,` y llegamos al 
+
+`reducer` 
+
+```js
+export function tweets{...
+    ...
+    case TWEETS_DETAIL_SUCCESS:
+      return { areLoaded: false, data: [action.payload] };
+    ...
+```
+lo introduce en data.
+
+A continuacion este componente `TweetPage() ` como tiene un selector `const tweet = useSelector(getTweet(params.tweetId)); ` nos llegará los datos que se le acaban de introducir y se pintará. Todo esto si la carga es desde la URL.
+
+Si venidos del listado la lo tendremos pintado de primeras y esto no hace nada
+
+```js 
+// action
+    if (getTweet(tweetId)(getState())) {
+      return;
+    }
+```
+
+Si haces la recarga ya te funciona
+
+![](public/img/20.png)
+
+Además puedes ver que está haciendo la petición, está llamando a `http://localhost:3000/tweets/8`
+
+![](public/img/21.png)
 
 
+--- 
 
+Ahora tienes que traerte `?_expand=user&_embed=likes` al `export const getTweet = tweetId => {` en 
+
+`/tweets/service`
+
+```js
+import client from '../../api/client';
+
+
+const tweetsUrl = '/api/tweets';
+
+export const getLatestTweets = () => {
+  const url = `${tweetsUrl}?_expand=user&_embed=likes&_sort=updatedAt&_order=desc`;
+  return client.get(url);
+};
+
+export const createTweet = tweet => {
+  const url = tweetsUrl;
+  return client.post(url, tweet);
+};
+
+export const getTweet = tweetId => {
+  const url = `${tweetsUrl}/${tweetId}?_expand=user&_embed=likes`;
+  return client.get(url);
+};
+```
 
 
 
