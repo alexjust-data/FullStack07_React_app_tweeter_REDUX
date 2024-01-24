@@ -53,6 +53,33 @@ const failureRedirects = (router, redirectsMap) => store => next => action => {
   return result;
 };
 
+const historyReducer = reducer => {
+  return function (state, action) {
+    const { history, ...restState } = state;
+
+    if (action.type === 'history/back') {
+      return {
+        ...history.last,
+        history: {
+          last: null,
+          current: history.last,
+        },
+      };
+    }
+
+    const newState = reducer(restState, action);
+    return {
+      ...newState,
+      history: {
+        last: restState,
+        current: newState,
+      },
+    };
+  };
+};
+
+const rootReducer = historyReducer(combineReducers(reducers));
+
 export default function configureStore(preloadedState, { router }) {
   const middleware = [
     withExtraArgument({ api: { auth, tweets }, router }),
@@ -62,7 +89,7 @@ export default function configureStore(preloadedState, { router }) {
     noAction,
   ];
   const store = createStore(
-    combineReducers(reducers),
+    rootReducer,
     preloadedState,
     composeEnhancers(applyMiddleware(...middleware)),
     // window.__REDUX_DEVTOOLS_EXTENSION__ &&

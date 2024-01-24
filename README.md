@@ -3042,9 +3042,11 @@ minuto 2:40 lo explica muy bien.
 
 Siempre que quiera declarar un estado con `useState` intenta hacerlo con `useReducer` es más limpio. Perdoer no vas a parder.
 
+---
+
 **Ejemplo clásico de useReducer**
 
-Para este ejempo nos salimos del proyecto y usamos la app de fundamentos.
+Para este ejempo usamos un `customHook` que hicimos al principio de todo, fuera de esta app tweeter
 
 ```js
 import { useEffect, useState } from 'react';
@@ -3100,7 +3102,7 @@ import { useEffect, useReducer } from 'react';
 function fetchReducer(state, action){
   switch(action.type){
     case 'request':
-      return{..state, isFetching : true, error: null };
+      return{...state, isFetching : true, error: null };
     case 'succes':
       return{...state, isFetching : false, data: action.playload};
     case 'failure':
@@ -3138,15 +3140,234 @@ export default function useFetch({ initialData, url }) {
 
 Aquí no tienes que elegir esta nomenclatura ` dispatch({ type: 'succes', payload: result.data }))` o esta `dispatch({ type: 'failure', payload: error }));` has de elegir la que mejor te funcione a ti en la app. mientras que tu hagas un disptach y el `fetchReducer(state, action)` lo entienda ya estará bien; cómo hayas llegado a ese acuerdo es cosa de nosotros.
 
+Tú podrías hacer esto sin objeto ni nada
+
+```js
+useEffect(() => {
+    dispatch({'request' });
+```
+y le estás diciendo, si `action = request` ya esta.  
+Lo único que debes tener claro es que 
+* lo que pases a `dispatch` es el segundo parámetro del useReducer
+* el state es el estado actual que tengo `...state`
+y en funcion de eso desarrollas tu la lógica del reducer.
+
+---
+
+Acostumbrate a usar `useReducer` tanto a casos complejos como sencillos. Te evita tener estados inconsistentes y ademástiene la ventaja que el dispatch tu lo puedes asociar a una función y lo puedes pasar para abajo porque tiene una referencia siempre fija.
 
 
+En realidad lo hemos introducido en esta parte del modulo pero no tien nada que ver con Redux. 
 
 
+## Por el Middelware pasan todas las acciones (extender el Reducer)
 
 
+Sabemos que por ahí van a pasar todas las acciones, nos podemos meter y si queremos agregar alguna acción o quitarle, ejecutar determinado código.
+
+Hay otro punto donde podemos extender React y nos podemos meter nosotros, que es en los Reducers : combineReducers.
 
 
+`store/index.js`
 
+```js
+import { createStore, combineReducers, applyMiddleware } from 'redux';
+...
+  const store = createStore(
+    combineReducers(reducers),
+```
+
+vamos a extender esto para que haga más cosas de las que está haciendo ahora mismo, sin necesidad de tocar estos reducer. Esto nos permite implementar algún tipo de lógica fuera de nuestra lógica de negocio como podría ser por ejemplo :
+
+* imagínate un historico de las 10 ultimas acciones.
+* imagínate un historico de las 10 ultimas acciones y que tuvieras una acción que te permitiera navegar hacia a trás las acciones que quisieras y luego volver.
+
+
+```js
+// ANTES
+export default function configureStore(preloadedState, { router }) {
+  const middleware = [
+    withExtraArgument({ api: { auth, tweets }, router }),
+    timestamp,
+    failureRedirects(router, { 401: '/login', 404: '/404' }),
+    logger,
+    noAction,
+  ];
+  const store = createStore(
+    combineReducers(reducers), // <----------- historyReducer(combineReducers(reducers));
+    preloadedState,
+    composeEnhancers(applyMiddleware(...middleware)),
+  );
+  return store;
+}
+
+// DESPUÉS
+const rootReducer = historyReducer(combineReducers(reducers));
+
+export default function configureStore(preloadedState, { router }) {
+  const middleware = [
+    withExtraArgument({ api: { auth, tweets }, router }),
+    timestamp,
+    failureRedirects(router, { 401: '/login', 404: '/404' }),
+    logger,
+    noAction,
+  ];
+  const store = createStore(
+    rootReducer,
+    preloadedState,
+    composeEnhancers(applyMiddleware(...middleware)),
+  );
+  return store;
+}
+```
+
+Me creo la funcion `historyReducer(reducer)`  que admite un reducer como parámetro.  Es decir que le pasaremos el reducer que teníamos `historyReducer(combineReducers(reducers));`. SI dentro de la función me creo otro `reducer` así, no cambiaría absolutamente nada. Simplemente son capas de reducer que retornan lo mismo, es un emboltorio, no hacemos nada
+
+```js
+const historyReducer = reducer => {
+  return function (state, action) {
+    return reducer(state, action);
+  };
+};
+```
+
+pero esto `return reducer(state, action);` es el nuevo estado, puedes hacer esto y es lo mismo
+
+
+```js
+const historyReducer = reducer => {
+  return function (state, action) {
+    const newState = reducer(state, action);
+    return newState
+  };
+};
+```
+
+Pero si le agragas un array con la historia ya casi lo tienes
+
+```js
+const historyReducer = reducer => {
+  return function (state, action) {
+    const newState = reducer(state, action);
+    return {...newState, history: [],
+  };
+};
+```
+
+y sin embargo no has contaminado para nada los 
+
+`store/reducers.js` :
+
+```js 
+const defaultState = {
+  auth: false,
+  tweets: {
+    areLoaded: false,
+    data: [],
+  },
+  ui: {
+    isFetching: false,
+    error: null,
+  },
+};
+```
+se lo has puesto por encima, todo sigue igual pero le has puesto una capa de reducer, ahora toca meterle la lógica.
+
+`store/index.js`
+
+```js
+const historyReducer = reducer => {
+  return function (state, action) {
+    const { history, ...restState } = state; // le paso el state
+    const newState = reducer(restState, action); // le paso el restState
+    return {
+      ...newState,                   // aquí ya tiene todo el estado actual reducer(restState, action)
+      history: {                     // y le añado la capa nueva
+        last: restState,
+        current: newState,
+      },
+    };
+  };
+};
+```
+
+
+Incluso como esto es una acciónpodrías añadirle que retorne el anterior
+
+```js
+const historyReducer = reducer => {
+  return function (state, action) {
+    const { history, ...restState } = state;
+
+    if (action.type === 'history/back') {
+      return {
+        ...history.last,
+        history: {
+          last: null,
+          current: history.last,
+        },
+      };
+    }
+
+    const newState = reducer(restState, action);
+    return {
+      ...newState,
+      history: {
+        last: restState,
+        current: newState,
+      },
+    };
+  };
+};
+```
+
+![](public/img/23.png)
+
+---
+
+El punto es que podemos meter lógica dentro del reduce.
+
+La idea de un `historyReducer` es bastante interesante y útil en ciertas aplicaciones, especialmente cuando deseas mantener un historial de estados o acciones para poder navegar entre ellos. Es una técnica que se ve a menudo en herramientas de desarrollo o en aplicaciones que requieren una funcionalidad de "deshacer" y "rehacer".
+
+Aquí tienes un ejemplo práctico de cómo podrías usar un `historyReducer` en tu aplicación:
+
+**Ejemplo Práctico: Funcionalidad de Deshacer y Rehacer en un Editor de Texto**
+
+Supongamos que estás creando una aplicación de edición de texto en línea. Una característica útil para los usuarios podría ser la capacidad de deshacer y rehacer sus cambios. Aquí es donde un `historyReducer` puede ser muy valioso.
+
+1. **Mantener el Historial de Cambios:**
+   Cada vez que el usuario realiza una acción que altera el texto (como escribir, borrar, formatear), el estado actual antes del cambio se añade al historial.
+
+2. **Deshacer Cambios:**
+   Cuando el usuario quiere deshacer un cambio, puedes disparar una acción, por ejemplo, `UNDO_ACTION`.
+   El `historyReducer` maneja esta acción volviendo al estado previo y actualizando el estado actual con este estado anterior.
+
+3. **Rehacer Cambios:**
+   Similarmente, para rehacer, puedes tener una acción `REDO_ACTION`.
+   El reducer manejaría esta acción volviendo al estado que se había deshecho si está disponible.
+
+Este `historyReducer` es un emboltorio alrededor del reducer de la aplicación que maneja el estado de la aplicación (`present`), así como listas de estados pasados (`past`) y futuros (`future`). Al realizar acciones de deshacer o rehacer, navega a través de estas listas para actualizar el estado actual.
+
+**Beneficios de Usar `historyReducer`**
+
+- **No Contamina los Reducers Existentes:** Al ser un emboltorio, no necesitas cambiar la lógica de tus reducers existentes.
+- **Flexibilidad:** Puedes grabar acciones específicas o estados específicos, dependiendo de cómo configures tu `historyReducer`.
+- **Desacoplamiento:** El historial de estados se maneja fuera del estado principal de la aplicación, manteniendo la lógica de la aplicación limpia y enfocada en su propósito principal.
+
+
+El `historyReducer` te permite agregar una funcionalidad de historial a tu aplicación sin afectar la lógica de negocio central. Puede ser extremadamente útil para funciones de deshacer/rehacer o para depurar y entender la secuencia de acciones y cambios de estado en tu aplicación.
+
+El concepto de un `historyReducer` puede ser aplicado en una variedad de contextos de aplicación más allá de un editor de texto. Aquí hay algunos ejemplos de cómo podrías aplicarlo:
+
+* **Juegos con Función de Deshacer** En un juego de rompecabezas o estrategia, los jugadores podrían beneficiarse de la capacidad de deshacer y rehacer movimientos. El `historyReducer` podría rastrear el estado del juego después de cada movimiento, permitiendo a los jugadores retroceder a un punto anterior si hacen un error o quieren probar una estrategia diferente.
+
+* **Aplicaciones de Dibujo o Diseño** Las aplicaciones que permiten a los usuarios crear o editar imágenes suelen tener una función de deshacer. El historyReducer podría manejar el historial de cambios en el lienzo, permitiendo a los usuarios deshacer trazos o ediciones.
+
+* **Formularios Dinámicos y Aplicaciones de Encuestas** En aplicaciones complejas con formularios dinámicos o encuestas, donde los usuarios pueden agregar o quitar secciones, el historyReducer podría ser útil para permitir a los usuarios deshacer la adición o eliminación de elementos del formulario.
+
+* **Administración de Estado en Aplicaciones de Software de Negocios** En aplicaciones de CRM o ERP, donde los usuarios pueden realizar múltiples cambios en los datos, como actualizar registros de clientes o inventario, el historyReducer podría ofrecer un historial de cambios, dando a los administradores la capacidad de revisar o revertir acciones si es necesario.
+
+* **Desarrollo Web y Herramientas de Diseño** Herramientas de desarrollo web como editores de código o plataformas de diseño podrían usar un historyReducer para permitir a los usuarios deshacer cambios en el código o en el diseño. Esto sería particularmente útil en un entorno colaborativo donde varios cambios pueden ser introducidos y revertidos rápidamente.
 
 
 
