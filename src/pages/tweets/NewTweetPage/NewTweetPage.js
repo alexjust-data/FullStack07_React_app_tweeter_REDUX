@@ -1,6 +1,13 @@
 import PropTypes from 'prop-types';
 import { useDispatch, useSelector } from 'react-redux';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+} from 'react';
 import Content from '../../../components/layout/Content';
 import Button from '../../../components/shared/Button';
 import Photo from '../../../components/shared/Photo';
@@ -39,20 +46,30 @@ HeavyComponent.propTypes = {
 // });
 
 // const MemoHeavyComponent = memo(HeavyComponent);
+
+// const toggleReducer = state => {
+//   return !state;
+// };
+  
 const MemoHeavyComponent = HeavyComponent;
-
+  
+const contentReducer = (state, event) => {
+    return event.target.value;
+};
+  
 function NewTweetPageForm({ isFetching, onSubmit }) {
-  const [content, setContent] = useState('');
+  const [content, handleChange] = useReducer(contentReducer, '');
+  const [on, toggle] = useReducer(state => !state, false);
   const textareaRef = useRef(null);
-
-  const handleChange = event => {
-    setContent(event.target.value);
-  };
 
   const handleSubmit = event => {
     event.preventDefault();
     onSubmit(content);
   };
+
+  // const handleChange = useCallback(event => {
+  //   setContent(event.target.value);
+  // }, []);
 
   const characters = `${content.length} / ${MAX_CHARACTERS}`;
   const buttonDisabled = content.length <= MIN_CHARACTERS || isFetching;
@@ -83,6 +100,9 @@ function NewTweetPageForm({ isFetching, onSubmit }) {
           Let's go!
         </Button>
       </div>
+      <Button type="button" onClick={toggle}>
+        {on ? 'ON' : 'OFF'}
+      </Button>
     </form>
   );
 }

@@ -2909,6 +2909,237 @@ export default function configureStore(preloadedState, { router }) {
   ];
 ```
 
+---
+
+## useReducer
+
+
+Es una alternativa tipo Reduc a useState, preferible cuando tenemos lógica de estado complicada. Es más potente y nos da unas ventajas que no nos da useState. Es una funcion que recibe un stado y una accion. `const [state, dispatch] = useReducer(reducer, initialArg, init);`
+
+https://react.dev/reference/react/useReducer
+
+La ventaja es que se puede declarar fuera.
+
+Tal y como hemos dejado la app que ya no hay estados localos salvo en un par de punto ... es compplicado sacar algún ejejmplo
+
+```js
+// par de puntos
+import * as tweets from '../pages/tweets/service';
+import * as auth from '../pages/auth/service';
+```
+
+Vamos hacer un ejemplo con este componente `NewTweetPage` que tiene el estado `const [content, setContent] = useState('');` que es el que controla lo que voy escribiendo en el campo de texto.
+
+Normalmente se aconseja utilizar `useReducer` para manejar estados complejos. Acúerdate al principio  que usamos un `customHook` para hacer `fetch` que tenía que manejar 3 estados, estados de `login, error, data ` pues ese tipo de estados biene muy bien manejarlos con useReducer.
+
+```js
+const [state, dispatch] = useReducer(reducer, initialState);
+```
+
+* `reducer`: Es una función que determina los cambios en el estado. Recibe el estado actual y una acción, y devuelve un nuevo estado.
+* `initialState`: El estado inicial del reducer.
+* `dispatch`: Una función que puedes llamar para disparar una actualización de estado.
+
+`NewTweetPage.js`
+
+```js
+function NewTweetPageForm({ isFetching, onSubmit }) {
+  const [content, setContent] = useState('');
+  const textareaRef = useRef(null);
+```
+
+Pero vamos a menjar un caso secillo
+
+```js
+// declaramos el reducer
+const contentReducer = (state, event) => {
+  return event.target.value;
+};
+
+
+function NewTweetPageForm({ isFetching, onSubmit }) {
+  const [content, handleChange] = useReducer(contentReducer, '');
+  const [on, toggle] = useReducer(state => !state, false);
+  const textareaRef = useRef(null);
+
+  // hago el dispatch del event
+  const handleSubmit = event => {
+    event.preventDefault();
+    onSubmit(content);
+  };
+
+  ...
+```
+
+En el componente `NewTweetPageForm`, se usan dos instancias de `useReducer`:
+
+
+1. **Manejo del Contenido del Tweet:**
+
+* `const [content, handleChange] = useReducer(contentReducer, '');`
+* Aquí, `contentReducer` se define como una función que simplemente devuelve `event.target.value`. Esto maneja los cambios en el contenido del área de texto del tweet.
+
+
+2. **Toggle ON/OFF:**
+
+* `const [on, toggle] = useReducer(state => !state, false);`
+* Esta es una función reductora en línea que simplemente invierte el estado. Se utiliza para manejar un toggle ON/OFF. En términos de implementación, un toggle ON/OFF puede ser representado por un botón, un switch deslizable, o cualquier otro control interactivo que pueda tener dos estados claramente definidos. En la programación, especialmente en el desarrollo web y de aplicaciones, estos controles se manejan a menudo con lógica de estado booleano, donde true representa "ON" y false representa "OFF".
+
+La conexión entre `handleChange` y `const [content, handleChange] = useReducer(contentReducer, '');` en un componente de React se establece a través del uso del hook useReducer. Aquí está cómo funciona:
+
+**Paso 1: Definición del Hook useReducer**
+
+Cuando utilizas `useReducer`, defines un estado y una función de despacho (`dispatch`) en tu componente. `useReducer` recibe una función reductora (`contentReducer` en este caso) y un estado inicial (una cadena vacía `''` aquí).
+
+```js
+const [content, handleChange] = useReducer(contentReducer, '');
+```
+
+* `content` es la variable de estado actual que se actualizará basándose en las acciones enviadas a la función reductora.
+* `handleChange` es una función de despacho generada por useReducer. A pesar de su nombre, no es un manejador de eventos en sí mismo; es una función que puedes llamar para enviar una acción a tu reductor.
+
+**Paso 2: Función Reductora contentReducer**
+
+Tu función reductora contentReducer define cómo se actualiza el estado en respuesta a una acción. En tu caso, se ve así:
+
+```js
+const contentReducer = (state, event) => {
+  return event.target.value;
+};
+```
+
+Esta función toma el estado actual (que no se usa directamente aquí) y un evento, y simplemente devuelve el valor del campo del evento (event.target.value). Este valor será el nuevo estado de content.
+
+**Paso 3: Utilización de handleChange con un Evento**
+
+Cuando asignas handleChange al evento onChange de un campo de entrada (como un área de texto), le estás diciendo a React que llame a handleChange con el objeto de evento como argumento cada vez que se produce un cambio en el campo de entrada.
+
+```js
+<Textarea onChange={handleChange} ... />
+```
+
+**Paso 4: Flujo de Datos**
+
+Cuando el usuario escribe en el área de texto, se dispara el evento onChange. Esto, a su vez, llama a `handleChange`, pasando el objeto de evento como argumento. handleChange, siendo la función de despacho de useReducer, envía este evento a `contentReducer`. La función reductora procesa este evento, extrayendo `event.target.value` y lo establece como el nuevo estado para content.
+
+--- 
+
+fíjate que así ya nos aparece el componente si escribimos en el texto que tiene el valor que es escrito.
+
+![](public/img/22.png)
+
+Uso del Reductor para content: Podría parecer un poco excesivo usar useReducer para un simple campo de texto. Normalmente, un caso de uso como este podría manejarse con useState. Sin embargo, useReducer puede ser útil si la lógica del estado se vuelve más compleja en el futuro.
+
+Y fíjate que limpio ha quedado el button
+
+```js
+      <Button type="button" onClick={toggle}>
+        {on ? 'ON' : 'OFF'}
+      </Button>
+```
+
+minuto 2:40 lo explica muy bien.
+
+Siempre que quiera declarar un estado con `useState` intenta hacerlo con `useReducer` es más limpio. Perdoer no vas a parder.
+
+**Ejemplo clásico de useReducer**
+
+Para este ejempo nos salimos del proyecto y usamos la app de fundamentos.
+
+```js
+import { useEffect, useState } from 'react';
+
+export default function useFetch({ initialData, url }) {
+  const [data, setData] = useState(initialData);
+  const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    setIsFetching(true);
+    setError(null);
+
+    fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Oooops');
+        }
+        return response.json();
+      })
+      .then(result => setData(result.data))
+      .catch(error => setError(error))
+      .finally(() => {
+        setIsFetching(false);
+      });
+  }, [url]);
+
+  return { data, isFetching, error };
+}
+```
+
+esto es un custonHook. Son tres estados que ven de la mano. 
+
+```js
+  const [data, setData] = useState(initialData);
+  const [isFetching, setIsFetching] = useState(false);
+  const [error, setError] = useState(null);
+```
+
+Cuando pones el `data` has de poner el 
+
+* `setData(result.data)` luego te has de acordar de poner el `setIsFetching(false);`
+* pero si hay error `.catch(error => setError(error))` y luego `setIsFetching(false);`
+
+Este es un caso muy buenopara usarlo con `useReducer` porque cuando tu lances la acción con requestisacces vas a cambiar los dos estados tanto el `data` como el `IsFetching` o cuando lances el error vas a cambiar los dos estados de una vez , no necesitas dos llamadas.
+
+vamos a implemmentarlo y manejarlo con `useReducer`
+
+
+```js
+import { useEffect, useReducer } from 'react';
+
+function fetchReducer(state, action){
+  switch(action.type){
+    case 'request':
+      return{..state, isFetching : true, error: null };
+    case 'succes':
+      return{...state, isFetching : false, data: action.playload};
+    case 'failure':
+      return{...state, isFetching : false, error: action.playload};
+  }
+})
+
+export default function useFetch({ initialData, url }) {
+  const = [state, dispatch] = useReducer(fetchReducer, {
+    data : initialData,
+    isFetching: false,
+    error: null,
+  })
+
+  useEffect(() => {
+    dispatch({ type: 'request' });
+
+    fetch(url)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Oooops');
+        }
+        return response.json();
+      })
+      .then(result => dispatch({ type: 'succes', payload: result.data }))
+      .catch(error => dispatch({ type: 'failure', payload: error }));
+      .finally(() => {
+        setIsFetching(false);
+      });
+  }, [url]);
+
+  return { data, isFetching, error };
+}
+```
+
+Aquí no tienes que elegir esta nomenclatura ` dispatch({ type: 'succes', payload: result.data }))` o esta `dispatch({ type: 'failure', payload: error }));` has de elegir la que mejor te funcione a ti en la app. mientras que tu hagas un disptach y el `fetchReducer(state, action)` lo entienda ya estará bien; cómo hayas llegado a ese acuerdo es cosa de nosotros.
+
+
+
 
 
 
