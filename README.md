@@ -3369,6 +3369,141 @@ El concepto de un `historyReducer` puede ser aplicado en una variedad de context
 
 * **Desarrollo Web y Herramientas de Diseño** Herramientas de desarrollo web como editores de código o plataformas de diseño podrían usar un historyReducer para permitir a los usuarios deshacer cambios en el código o en el diseño. Esto sería particularmente útil en un entorno colaborativo donde varios cambios pueden ser introducidos y revertidos rápidamente.
 
+## Sígnals - MobX (otros redux)
+
+Estamos hablando de redux como solución al estado en aplicaciones react  
+Hay muchas otras formas de manejo de estado  
+Sígnals he leído algo pero no lo conozco bien  
+
+https://purtiaggarwal1997.medium.com/react-data-fetching-using-axios-with-hooks-e6400aa44e19
+
+https://javascript.plainenglish.io/signals-a-performant-alternative-to-react-hooks-ecdd6de61f62
+
+
+## TypeScript con Redux
+
+https://redux.js.org/usage/usage-with-typescript
+
+
+
+---
+
+## Pasarelas de pago
+
+https://www.youtube.com/watch?v=rl4tyTNUg6k
+
+Normalmente front + back. Al final el backend es un entorno más seguro y pondrás ahí las cosas más delicadas. Por ejemplo,  si tu integración con la pasarela depende de una secret key, no querrás exponer esa key en el front y necesitarás una capa de backend.  Pero la entrada de datos del usuario se produce desde el front.
+Por ejemplo, con esta library
+
+https://docs.monei.com/docs/integrations/use-payment-modal/
+
+## Escribiendo Test unitarios (test funcional) - React Redux unitest
+
+Para unidades pequeñas de la app. Para todo el flujo tendrías por ejejmplo `Playwright` pero no es ete caso.
+
+Testar todo lo que tiene que ver con Redux y React
+
+Yes ejecuta los test (redux)
+
+* Acciones asíncronas
+* Acciones síncronas
+* Reducers
+* Selectores
+* Componentes
+
+Usaremos jest para ejecutar nuestros tests: https://jestjs.io/
+
+https://testing-library.com/
+
+https://kentcdodds.com/blog/fix-the-not-wrapped-in-act-warning
+
+
+Con create-react-app ya viene configurado
+
+```json
+  "dependencies": {
+    "@redux-devtools/extension": "^3.3.0",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+```
+
+
+```sh
+npm run test
+```
+
+Excepto en las acciones asíncronas, no tendremos necesidad de mocks de funciones
+
+**Acciones síncronas**
+
+Cómo testear un action creator síncrono:
+
+*  Creamos el objeto con la acción esperada
+* Ejecutamos el action creator
+* Comprobamos que el resultado del action creator coincide con la acción esperada
+
+Si quieres te puedes crar una carpeta `test` siempre al lado de los ficheros que estamos testeando.  
+En este caso ahora vamos a testear `actions.js`
+
+arrancamos el test 
+
+```sh
+npm run test
+```
+Te dará error porque no hay ningún test escrito.
+
+
+Testeamos estas funciónes de `actions.js`:
+
+```js
+export const authLoginSuccess = () => ({
+  type: AUTH_LOGIN_SUCCESS,
+});
+
+export const tweetsLoadedSuccess = tweets => ({
+  type: TWEETS_LOADED_SUCCESS,
+  payload: tweets,
+});
+```
+
+Me creo el archivo de testeo: `store/test/action.js` 
+
+```js
+describe() // sirve para acul¡mular test
+
+it() // dentro crearemos el test
+
+test() // es lo mismo que it
+```
+
+**Test funciones síncronas**
+
+```js
+describe('authLoginSuccess', () => {
+  test('should return an "AUTH_LOGIN_SUCCESS" action', () => {
+    const expectedAction = {
+      type: AUTH_LOGIN_SUCCESS,            // esto espero que me retorne
+    };
+    const action = authLoginSuccess();     // ejecuto la función para testear
+    expect(action).toEqual(expectedAction);// compruebo que action es lo mismo que expectedAction
+  });
+});
+
+describe('tweetsLoadedSuccess', () => {
+  it('should return a "TWEETS_LOADED_SUCCESS" action with payload', () => {
+    const tweets = 'tweets';               // le paso lo que sea
+    const expectedAction = {
+      type: TWEETS_LOADED_SUCCESS,
+      payload: tweets,
+    };
+    const action = tweetsLoadedSuccess(tweets);
+    expect(action).toEqual(expectedAction);
+  });
+});
+```
+
+La utilidad de estos test no es tanto que esté testeando el codigo actual, qué ocurre si dentro de 6 meses estamos desarolando algo nuevo y se modifica la acción `tweetsLoadedSuccess`? el test te da el aviso, te darás cuenta dle cambio en el mismo momento de que el test no pasa y se abrirá el debate de si esta función hay que cambiarla o no.
 
 
 
