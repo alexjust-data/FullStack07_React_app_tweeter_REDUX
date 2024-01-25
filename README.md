@@ -3399,6 +3399,13 @@ https://docs.monei.com/docs/integrations/use-payment-modal/
 
 ## Escribiendo Test unitarios (test funcional) - React Redux unitest
 
+Para saber una vez escritos los test, saber cuánta covertuda de código testeado has hecho, lo haría así
+
+```sh
+# npm run test -- --coverage
+npm run test -- --coverage --watchAll=false
+```
+
 Para unidades pequeñas de la app. Para todo el flujo tendrías por ejejmplo `Playwright` pero no es ete caso.
 
 Testar todo lo que tiene que ver con Redux y React
@@ -3542,6 +3549,32 @@ describe('auth', () => {
     const state = undefined;
     const action = tweetsCreatedRequest();
     expect(auth(state, action)).toBe(defaultState.auth);
+  });
+});
+```
+
+**Test funciones selectors síncronas**
+
+
+`store/test/selectors.js` 
+
+```js
+//export const getTweet = tweetId => state =>
+//  getTweets(state).find(tweet => tweet.id === Number(tweetId));
+
+import { getTweet } from '../selectors';
+
+describe('getTweet', () => { // le paso justo la info básica que quiero
+  const tweetId = '1';
+  const tweets = [{ id: +tweetId }];
+  const state = { tweets: { data: tweets } };
+
+  test('should return a tweet by tweetId', () => {
+    expect(getTweet(tweetId)(state)).toBe(tweets[0]); // le paso la info y buscará que coincida 1
+  });
+
+  test('should not return any tweet', () => {
+    expect(getTweet('2')(state)).toBeUndefined(); // le paso la info para que falle
   });
 });
 ```
