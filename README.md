@@ -3442,6 +3442,10 @@ npm run test
 
 Excepto en las acciones asíncronas, no tendremos necesidad de mocks de funciones
 
+---
+### Síncronas
+
+
 **Test funciones actions síncronas**
 
 Cómo testear un action creator síncrono:
@@ -3579,7 +3583,179 @@ describe('getTweet', () => { // le paso justo la info básica que quiero
 });
 ```
 
+---
+### Asíncronas
+
+**Test authLogin**
+
+Esta acción lo que hace es que le pasamos unos parámetros y nos devuelve la función de la acción en si
+
+`export function authLogin(credentials) {`  
+`  return async function (dispatch, getState, { api: { auth }, router }) {`  
+`    try {`  
+
+```js
+import {
+  authLogin,
+  authLoginFailure,
+  authLoginRequest,
+  authLoginSuccess,
+  tweetsLoadedSuccess,
+} from '../actions';
+import { AUTH_LOGIN_SUCCESS, TWEETS_LOADED_SUCCESS } from '../types';
 
 
+describe('authLogin', () => {
+  const credentials = 'credentials'; // sólo quiero que vaya al metodo auth.login()
+  const action = authLogin(credentials); // ¿qué pasa si internamente falla?
+                                         // a esta accion le hemos de pasar (dispatch, getState, { api: { auth }, router })
+
+  const redirectUrl = 'redirectUrl';
+  const dispatch = jest.fn(); // me vale con que sea una funcion, la más sencilla
+  const api = { auth: {} };   // inyecto objeto api
+  const router = {            // inyecto router
+    state: { location: { state: { from: { pathname: redirectUrl } } } },
+    navigate: jest.fn(),
+  };
+  // me creo los test
+  test('when login resolves should follow the login flow', async () => {
+    api.auth.login = jest.fn().mockResolvedValue(); // tiene que acabar resolviendo a un valor, una promesa resuelta
+    await action(dispatch, undefined, { api, router }); // await has de esperar que se cumpla la función
+
+    expect(dispatch).toHaveBeenCalledTimes(2);
+    // dispatch llama dos veces, la segunda con authLoginRequest
+    expect(dispatch).toHaveBeenNthCalledWith(1, authLoginRequest()); 
+    // que las credenciales que le paso al inicio para la acción lleguen al metodo login
+    expect(api.auth.login).toHaveBeenCalledWith(credentials); 
+    expect(dispatch).toHaveBeenNthCalledWith(2, authLoginSuccess());
+    expect(router.navigate).toHaveBeenCalledWith(redirectUrl);
+  });
+
+  test('when login rejects should follow the error flow', async () => {
+    const error = new Error('unauthorized');
+    api.auth.login = jest.fn().mockRejectedValue(error);
+    await action(dispatch, undefined, { api, router });
+
+    expect(dispatch).toHaveBeenCalledTimes(2);
+    expect(dispatch).toHaveBeenNthCalledWith(1, authLoginRequest());
+    expect(api.auth.login).toHaveBeenCalledWith(credentials);
+    expect(dispatch).toHaveBeenNthCalledWith(2, authLoginFailure(error));
+    expect(router.navigate).not.toHaveBeenCalledWith(redirectUrl);
+  });
+});
+```
 
 
+****
+
+le paso esto al `store/actions.js`
+
+```js
+import * as auth from '../pages/auth/service';
+```
+
+Si quiero mokear este modulo lo que haría sería
+
+```js
+import {
+  authLogin,
+  authLoginFailure,
+  authLoginRequest,
+  authLoginSuccess,
+  tweetsLoadedSuccess,
+} from '../actions';
+import { AUTH_LOGIN_SUCCESS, TWEETS_LOADED_SUCCESS } from '../types';
+
+// importo
+import * as auth from '../pages/auth/service';
+// creo el jest
+jest.mock(`../../page(auth/service.js`);
+
+// y esto tendría acceso a 
+console.log(auth.login)
+```
+... pero debes arreglar esto:
+
+Mediante esta opción puedes pasarle un array de estrings que diga que por efecto el va a no transformar el node_modules exepto axios. Si quiero que ignore axios le digo esto al package.json
+
+```json
+  "jest": {
+    "transformIgnorePatterns": [
+      "/node_modules/(?!(axios)/)"
+    ]
+  }
+```
+
+**Test de snapshost**
+
+El "Test de Snapshot" o prueba de instantánea es un concepto utilizado generalmente en el ámbito de la informática y la gestión de datos. Se refiere a la captura del estado de un sistema o conjunto de datos en un momento específico. Este tipo de prueba es útil para verificar el estado actual de un sistema o para realizar comparaciones antes y después de cambios o actualizaciones. En bases de datos, por ejemplo, un test de snapshot podría implicar tomar una copia de todos los datos en un punto específico en el tiempo para su análisis o respaldo.
+
+https://testing-library.com/docs/
+
+`auth/LoginPage/__test__/LoginPage.js`
+
+```js
+import { act, render, screen } from '@testing-library/react'; // para el test de funcionamiento
+import LoginPage from '../LoginPage';
+import { Provider } from 'react-redux';
+import { authLogin } from '../../../../store/actions';
+import userEvent from '@testing-library/user-event';
+
+jest.mock('../../../../store/actions');
+
+const userType = (input, text) => userEvent.type(input, text);
+
+describe('LoginPage', () => {
+  const state = { ui: { isFetching: false, error: null } }; //const { isFetching, error } = useSelector(getUi);
+  const store = {
+    getState: () => state,
+    subscribe: () => {},
+    dispatch: () => {},
+  };
+  
+  // le paso al render mi compnente LoginPage
+  const renderComponent = () =>
+    render(
+      <Provider store={store}>
+        <LoginPage />
+      </Provider>,
+    );
+
+  test('snapshot', () => {
+    const { container } = renderComponent();
+    expect(container).toMatchSnapshot();
+  });
+
+  // vamos a rellenar los imputs de usuario y los botones, los rellenamos y vemos si pasa el test.
+  // debería despacharse dispatch(authLogin(credentials));
+
+  test('should dispatch authLogin action', async () => {
+    const username = 'keepcoder';
+    const password = 'password';
+    renderComponent();
+
+    const usernameInput = screen.getByLabelText(/username/);
+    const passwordInput = screen.getByLabelText(/password/);
+    const submitButton = screen.getByRole('button');
+
+    expect(submitButton).toBeDisabled(); // me saco la foto con el resultado
+
+    // fireEvent.change(usernameInput, { target: { value: username } });
+    await act(() => userType(usernameInput, username));
+    // fireEvent.change(passwordInput, { target: { value: password } });
+    await act(() => userType(passwordInput, password));
+
+    expect(submitButton).toBeEnabled();
+
+    // fireEvent.click(submitButton);
+    await userEvent.click(submitButton);
+
+    expect(authLogin).toHaveBeenCalledWith({ username, password });
+  });
+});
+
+```
+
+Cuando ejecutes este test por primera vez, Jest creará un archivo de snapshot dentro de una carpeta `__snapshots__` en el mismo directorio que tu archivo de test. En futuras ejecuciones, Jest comparará la salida renderizada con este snapshot para detectar cambios. Si en algún momento necesitas actualizar el snapshot (por ejemplo, después de un cambio intencionado en el componente), puedes hacerlo ejecutando Jest con la opción `--updateSnapshot` o `-u`. 
+
+Si cambias algo, tu foto hará que falle hasta que actualices tu snapshot. Puedes ejecutar tantos como quieras.

@@ -16,6 +16,8 @@ import {
   UI_RESET_ERROR,
 } from './types';
 
+import * as auth from '../pages/auth/service';
+
 export const authLoginRequest = () => ({
   type: AUTH_LOGIN_REQUEST,
 });
