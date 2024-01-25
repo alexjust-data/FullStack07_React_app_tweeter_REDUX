@@ -3435,7 +3435,7 @@ npm run test
 
 Excepto en las acciones asíncronas, no tendremos necesidad de mocks de funciones
 
-**Acciones síncronas**
+**Test funciones actions síncronas**
 
 Cómo testear un action creator síncrono:
 
@@ -3467,7 +3467,9 @@ export const tweetsLoadedSuccess = tweets => ({
 });
 ```
 
-Me creo el archivo de testeo: `store/test/action.js` 
+Me creo el archivo de testeo: 
+
+`store/test/action.js` 
 
 ```js
 describe() // sirve para acul¡mular test
@@ -3476,8 +3478,6 @@ it() // dentro crearemos el test
 
 test() // es lo mismo que it
 ```
-
-**Test funciones síncronas**
 
 ```js
 describe('authLoginSuccess', () => {
@@ -3506,9 +3506,45 @@ describe('tweetsLoadedSuccess', () => {
 La utilidad de estos test no es tanto que esté testeando el codigo actual, qué ocurre si dentro de 6 meses estamos desarolando algo nuevo y se modifica la acción `tweetsLoadedSuccess`? el test te da el aviso, te darás cuenta dle cambio en el mismo momento de que el test no pasa y se abrirá el debate de si esta función hay que cambiarla o no.
 
 
+**Test funciones reducers síncronas**
 
+En estos reducers radica gran parte de lógica de mi aplicacion. Cuanta más combinaciones testee mejor.
 
+`store/test/reducers.js` 
 
+```js
+import { authLoginSuccess, 
+         authLogout, 
+         tweetsCreatedRequest } from '../actions';
+import { auth, 
+         defaultState } from '../reducers';
+
+// pasa por este codigo --> function auth(state, action)
+describe('auth', () => {
+  test('should manage "AUTH_LOGIN_SUCCESS" action', () => { // return true;
+    const state = defaultState.auth;   // estado actual
+    const action = authLoginSuccess(); // cuando lanzo la accion
+    expect(auth(state, action)).toBe(true); // el estado debe ponerse true 
+  });
+  test('should manage "AUTH_LOGOUT" action', () => { // return false;
+    const state = defaultState.auth;
+    const action = authLogout();
+    expect(auth(state, action)).toBe(false);
+  });
+  test('should manage "ANY" action', () => { // return state;
+    const state = defaultState.auth;
+    const action = tweetsCreatedRequest();
+    expect(auth(state, action)).toBe(state);
+  });
+  // cuando el estado es indefinido, es decir cuando se inicia ha de cojer 
+  // por defecto function auth(state = defaultState.auth
+  test('should manage "ANY" action when state is not defined', () => {
+    const state = undefined;
+    const action = tweetsCreatedRequest();
+    expect(auth(state, action)).toBe(defaultState.auth);
+  });
+});
+```
 
 
 
