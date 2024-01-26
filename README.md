@@ -3801,3 +3801,80 @@ https://testing-library.com/docs/
 });
 ```
 
+quedando así, analízalo bien linea a linea lo que cambia.
+
+```js
+import { act, render, screen } from '@testing-library/react';
+import LoginPage from '../LoginPage';
+import { Provider } from 'react-redux';
+import { authLogin } from '../../../../store/actions';
+import userEvent from '@testing-library/user-event';
+
+jest.mock('../../../../store/actions');
+
+const userType = (input, text) => userEvent.type(input, text);
+
+describe('LoginPage', () => {
+  const state = { ui: { isFetching: false, error: null } };
+  const store = {
+    getState: () => state,
+    subscribe: () => {},
+    dispatch: () => {},
+  };
+
+  const renderComponent = () =>
+    render(
+      <Provider store={store}>
+        <LoginPage />
+      </Provider>,
+    );
+
+  test('snapshot', () => {
+    const { container } = renderComponent();
+    expect(container).toMatchSnapshot();
+  });
+
+  test('should dispatch authLogin action', async () => {
+    const username = 'keepcoder';
+    const password = 'password';
+    renderComponent();
+
+    const usernameInput = screen.getByLabelText(/username/);
+    const passwordInput = screen.getByLabelText(/password/);
+    const submitButton = screen.getByRole('button');
+
+    expect(submitButton).toBeDisabled();
+
+    // fireEvent.change(usernameInput, { target: { value: username } });
+    await act(() => userType(usernameInput, username));
+    // fireEvent.change(passwordInput, { target: { value: password } });
+    await act(() => userType(passwordInput, password));
+
+    expect(submitButton).toBeEnabled();
+
+    // fireEvent.click(submitButton);
+    await userEvent.click(submitButton);
+
+    expect(authLogin).toHaveBeenCalledWith({ username, password });
+  });
+});
+```
+
+# Consejos muy importantes
+
+Te recomiendo que hagas test siempre. Son super importantes. Es tan importante el test como a implementación. 
+
+Usa e implementa la lógica mientras haces código:
+
+**Test Driven Development (TDD)** 
+
+es una metodología de desarrollo de software que sigue un ciclo repetitivo muy específico. El objetivo principal es asegurarse de que el código escrito sea confiable y cumpla con los requisitos de diseño antes de avanzar en más funciones o componentes del software. Aquí está el ciclo básico de TDD:
+
+**Escribir una prueba:** Antes de escribir el código funcional, el desarrollador escribe una prueba automatizada que define una mejora deseada o una nueva función. Esta prueba fallará inicialmente, ya que aún no existe el código que cumpla con los requisitos de la prueba.
+
+**Escribir el código:** El desarrollador escribe el código mínimo necesario para que la prueba pase. Este código no necesita ser perfecto; el objetivo es simplemente pasar la prueba.
+
+**Refactorizar el código:** Una vez que la prueba pasa, el desarrollador puede limpiar y optimizar el código, asegurándose de que sigue los estándares de calidad y diseño. Es crucial que las pruebas existentes sigan pasando después de la refactorización.
+
+**Repetir:** Este ciclo se repite para cada nueva característica o mejora en el software. Se agregan más pruebas y se escribe más código, siempre asegurándose de que todas las pruebas pasen.
+
