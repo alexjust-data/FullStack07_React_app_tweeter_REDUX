@@ -3729,7 +3729,7 @@ describe('LoginPage', () => {
   // vamos a rellenar los imputs de usuario y los botones, los rellenamos y vemos si pasa el test.
   // debería despacharse dispatch(authLogin(credentials));
 
-  test('should dispatch authLogin action', async () => {
+  test('should dispatch authLogin action', () => {
     const username = 'keepcoder';
     const password = 'password';
     renderComponent();
@@ -3738,17 +3738,14 @@ describe('LoginPage', () => {
     const passwordInput = screen.getByLabelText(/password/);
     const submitButton = screen.getByRole('button');
 
-    expect(submitButton).toBeDisabled(); // me saco la foto con el resultado
+    expect(submitButton).toBeDisabled();
 
-    // fireEvent.change(usernameInput, { target: { value: username } });
-    await act(() => userType(usernameInput, username));
-    // fireEvent.change(passwordInput, { target: { value: password } });
-    await act(() => userType(passwordInput, password));
+    fireEvent.change(usernameInput, { target: { value: username } });
+    fireEvent.change(passwordInput, { target: { value: password } });
 
     expect(submitButton).toBeEnabled();
 
-    // fireEvent.click(submitButton);
-    await userEvent.click(submitButton);
+    fireEvent.click(submitButton);
 
     expect(authLogin).toHaveBeenCalledWith({ username, password });
   });
@@ -3759,3 +3756,48 @@ describe('LoginPage', () => {
 Cuando ejecutes este test por primera vez, Jest creará un archivo de snapshot dentro de una carpeta `__snapshots__` en el mismo directorio que tu archivo de test. En futuras ejecuciones, Jest comparará la salida renderizada con este snapshot para detectar cambios. Si en algún momento necesitas actualizar el snapshot (por ejemplo, después de un cambio intencionado en el componente), puedes hacerlo ejecutando Jest con la opción `--updateSnapshot` o `-u`. 
 
 Si cambias algo, tu foto hará que falle hasta que actualices tu snapshot. Puedes ejecutar tantos como quieras.
+
+
+https://testing-library.com/docs/ 
+
+```json
+  "dependencies": {
+    "@redux-devtools/extension": "^3.3.0",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+```
+
+**Writing test with userEvent**
+
+```js
+  test('should dispatch authLogin action', async () => {
+    const username = 'keepcoder';
+    const password = 'password';
+    renderComponent();
+
+    const usernameInput = screen.getByLabelText(/username/);
+    const passwordInput = screen.getByLabelText(/password/);
+    const submitButton = screen.getByRole('button');
+
+    expect(submitButton).toBeDisabled();
+
+    // fireEvent.change(usernameInput, { target: { value: username } });
+    act(() => {
+      userEvent.type(usernameInput, username);
+    });
+    // fireEvent.change(passwordInput, { target: { value: password } });
+    act(() => {
+      userEvent.type(passwordInput, password);
+    });
+
+    expect(submitButton).toBeEnabled();
+
+    // fireEvent.click(submitButton);
+    await userEvent.click(submitButton);
+
+    expect(authLogin).toHaveBeenCalledWith({ username, password });
+  });
+});
+```
+
