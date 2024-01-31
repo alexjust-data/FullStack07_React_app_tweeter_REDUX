@@ -3758,7 +3758,7 @@ Cuando ejecutes este test por primera vez, Jest creará un archivo de snapshot d
 Si cambias algo, tu foto hará que falle hasta que actualices tu snapshot. Puedes ejecutar tantos como quieras.
 
 
-https://testing-library.com/docs/ 
+https://testing-library.com/docs/  Estudia esta librería y te ayudará mucho hacer los test de determinada manera
 
 ```json
   "dependencies": {
@@ -3877,4 +3877,19 @@ es una metodología de desarrollo de software que sigue un ciclo repetitivo muy 
 **Refactorizar el código:** Una vez que la prueba pasa, el desarrollador puede limpiar y optimizar el código, asegurándose de que sigue los estándares de calidad y diseño. Es crucial que las pruebas existentes sigan pasando después de la refactorización.
 
 **Repetir:** Este ciclo se repite para cada nueva característica o mejora en el software. Se agregan más pruebas y se escribe más código, siempre asegurándose de que todas las pruebas pasen.
+
+
+
+## Redux toolkits (React Redux app)
+
+> [!WARNING]
+> Vamos a refectorizar toda la app con https://redux-toolkit.js.org/  
+>   
+> Continuamos en el repositorio https://github.com/alexjust-data/FullStack07_React_app_tweeter_REDUX_Toolkit.git 
+> 
+
+
+
+
+
 
