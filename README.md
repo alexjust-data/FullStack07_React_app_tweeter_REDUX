@@ -3770,6 +3770,12 @@ describe('LoginPage', () => {
 
 ```
 
+> [!NOTE]
+> **Snapshot Testing**: Es importante recordar que las pruebas de snapshot son útiles para detectar cambios inesperados en la UI, pero no prueban la lógica del componente. Debes combinar estas pruebas con otras pruebas unitarias y de integración para tener una cobertura completa.
+> **Mocks y Dependencias**: Dependiendo de cómo esté implementado LoginPage y sus dependencias (como useAuth), es posible que necesites ajustar los mocks para que se alineen con tu implementación real.
+
+
+
 Cuando ejecutes este test por primera vez, Jest creará un archivo de snapshot dentro de una carpeta `__snapshots__` en el mismo directorio que tu archivo de test. En futuras ejecuciones, Jest comparará la salida renderizada con este snapshot para detectar cambios. Si en algún momento necesitas actualizar el snapshot (por ejemplo, después de un cambio intencionado en el componente), puedes hacerlo ejecutando Jest con la opción `--updateSnapshot` o `-u`. 
 
 Si cambias algo, tu foto hará que falle hasta que actualices tu snapshot. Puedes ejecutar tantos como quieras.
