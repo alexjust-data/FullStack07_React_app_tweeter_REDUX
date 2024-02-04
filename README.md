@@ -3770,6 +3770,15 @@ describe('LoginPage', () => {
 
 ```
 
+El componente `LoginPage` interactúa con el store de Redux y realiza acciones asíncronas (como el inicio de sesión), lo que complica un poco las pruebas.
+
+Para el snapshot test, el enfoque ideal sería probar el componente de manera aislada, enfocándose en su estructura y salida de renderizado, sin necesariamente preocuparse por las acciones del store o las mutaciones de estado. Sin embargo, dado que el componente interactúa con el store y posiblemente con otros hooks o servicios externos, es común mockear estas interacciones para centrarse únicamente en la salida visual del componente.
+
+El uso de jest.mock() en este contexto es para asegurarnos de que el componente pueda renderizarse en un entorno controlado para el snapshot test, sin ejecutar lógica de negocio real o hacer llamadas a APIs externas. Esto nos permite obtener una imagen consistente y confiable de la interfaz del usuario para el snapshot, sin la variabilidad que podrían introducir las interacciones reales con el store o servicios externos.
+
+Para realizar únicamente un snapshot test de LoginPage sin considerar las interacciones con el store, podríamos simplificar el test y no utilizar `jest.mock()`. En ese caso, el enfoque se centraría solamente en renderizar el componente y tomar un snapshot de su salida. Esto verificaría que la interfaz de usuario del componente no cambie inesperadamente con futuras modificaciones del código.
+
+
 > [!NOTE]
 > **Snapshot Testing**: Es importante recordar que las pruebas de snapshot son útiles para detectar cambios inesperados en la UI, pero no prueban la lógica del componente. Debes combinar estas pruebas con otras pruebas unitarias y de integración para tener una cobertura completa.
 > **Mocks y Dependencias**: Dependiendo de cómo esté implementado LoginPage y sus dependencias (como useAuth), es posible que necesites ajustar los mocks para que se alineen con tu implementación real.
