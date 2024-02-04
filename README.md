@@ -3653,6 +3653,15 @@ le paso esto al `store/actions.js`
 ```js
 import * as auth from '../pages/auth/service';
 ```
+**"Mockear"** en el contexto de pruebas de software se refiere a la creación de una implementación simulada o "falsa" de una parte específica de tu código. Esto puede incluir funciones, módulos, APIs, o cualquier otra dependencia que tu código utilice. El objetivo de mockear es aislar y simplificar las pruebas al controlar cómo se comportan estas dependencias.
+
+Cuando mockeas algo, estás reemplazando la funcionalidad real con una versión simulada que puedes controlar y monitorear durante las pruebas. 
+
+1. Aislamiento: Te permite probar componentes o funciones de manera aislada, sin preocuparte por sus dependencias externas. Por ejemplo, si un componente llama a una API externa, puedes mockear la respuesta de esa API para que la prueba no dependa de factores externos.
+2. Consistencia: Asegura que las pruebas sean consistentes y no dependan de factores externos que puedan cambiar (como servicios web, bases de datos, etc.).
+3. Simplicidad: Simplifica las pruebas al no requerir configurar y mantener un entorno completo que incluya todas las dependencias reales.
+4. Control: Te da control sobre el comportamiento de las dependencias, permitiéndote probar cómo reacciona tu código bajo diferentes condiciones (por ejemplo, cómo maneja errores de una API).
+5. Velocidad: Puede acelerar las pruebas al eliminar la necesidad de interactuar con recursos lentos o no disponibles (como una base de datos).
 
 Si quiero mokear este modulo lo que haría sería
 
@@ -3689,6 +3698,14 @@ Mediante esta opción puedes pasarle un array de estrings que diga que por efect
 **Test de snapshost**
 
 El "Test de Snapshot" o prueba de instantánea es un concepto utilizado generalmente en el ámbito de la informática y la gestión de datos. Se refiere a la captura del estado de un sistema o conjunto de datos en un momento específico. Este tipo de prueba es útil para verificar el estado actual de un sistema o para realizar comparaciones antes y después de cambios o actualizaciones. En bases de datos, por ejemplo, un test de snapshot podría implicar tomar una copia de todos los datos en un punto específico en el tiempo para su análisis o respaldo.
+
+¿Cuándo usar jest.mock() en Snapshot Testing?
+
+El uso de jest.mock() en el contexto del snapshot testing es útil cuando tu componente depende de ciertos módulos o comportamientos que quieres mockear (simular) durante la prueba. Algunos ejemplos comunes incluyen:
+
+1. Mocks de Hooks o Funciones Personalizadas: Si tu componente utiliza hooks personalizados o funciones importadas que afectan su renderizado y no quieres que se ejecuten con su lógica real durante la prueba de snapshot.
+2. Mocks de Módulos Externos: Si tu componente depende de módulos externos (por ejemplo, una biblioteca de UI) y deseas evitar que estos afecten el resultado del snapshot.
+3. Simplicidad en Pruebas: A veces, mockear ciertas partes de un componente puede hacer que las pruebas sean más simples y enfocadas, evitando la necesidad de configurar un entorno de prueba complejo.
 
 https://testing-library.com/docs/
 
