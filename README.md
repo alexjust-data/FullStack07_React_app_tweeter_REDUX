@@ -3781,8 +3781,8 @@ Para realizar únicamente un snapshot test de LoginPage sin considerar las inter
 
 > [!NOTE]
 > **Snapshot Testing**: Es importante recordar que las pruebas de snapshot son útiles para detectar cambios inesperados en la UI, pero no prueban la lógica del componente. Debes combinar estas pruebas con otras pruebas unitarias y de integración para tener una cobertura completa.
+> 
 > **Mocks y Dependencias**: Dependiendo de cómo esté implementado LoginPage y sus dependencias (como useAuth), es posible que necesites ajustar los mocks para que se alineen con tu implementación real.
-
 
 
 Cuando ejecutes este test por primera vez, Jest creará un archivo de snapshot dentro de una carpeta `__snapshots__` en el mismo directorio que tu archivo de test. En futuras ejecuciones, Jest comparará la salida renderizada con este snapshot para detectar cambios. Si en algún momento necesitas actualizar el snapshot (por ejemplo, después de un cambio intencionado en el componente), puedes hacerlo ejecutando Jest con la opción `--updateSnapshot` o `-u`. 
@@ -3909,7 +3909,6 @@ es una metodología de desarrollo de software que sigue un ciclo repetitivo muy 
 **Refactorizar el código:** Una vez que la prueba pasa, el desarrollador puede limpiar y optimizar el código, asegurándose de que sigue los estándares de calidad y diseño. Es crucial que las pruebas existentes sigan pasando después de la refactorización.
 
 **Repetir:** Este ciclo se repite para cada nueva característica o mejora en el software. Se agregan más pruebas y se escribe más código, siempre asegurándose de que todas las pruebas pasen.
-
 
 
 ## Redux toolkits (React Redux app)
